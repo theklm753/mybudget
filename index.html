@@ -300,8 +300,9 @@
     <!-- JavaScript Logique Application -->
     <script>
         let currentView = 'moi'; // 'moi', 'commun'
+// Si le navigateur a une version plus récente en mémoire, on la prend, sinon on prend data.js
+let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || db;
 
-let db = JSON.parse(localStorage.getItem('my_budget_db')) || defaultData;
 
      function saveDB() {
     // 1. Sauvegarde locale dans le navigateur (pour que l'appli soit fluide)
