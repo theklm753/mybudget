@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBudget - Gestion de Budget Couple</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        neonPink: '#ff007f',
+                        neonPurple: '#9d00ff',
+                        neonCyan: '#0099ff',
+                        neonYellow: '#d97706',
+                        neonGreen: '#059669',
+                        lightBg: '#f8fafc',
+                        cardBg: '#ffffff',
+                        cardHover: '#f1f5f9'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-lightBg text-slate-800 font-sans min-h-screen selection:bg-neonPink selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="bg-cardBg border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-opacity-90 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neonPink via-neonPurple to-neonCyan flex items-center justify-center shadow-[0_0_15px_rgba(255,0,127,0.3)]">
+                    <i class="fa-solid fa-wallet text-white text-lg"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-wider bg-gradient-to-r from-neonPink via-neonPurple to-neonCyan bg-clip-text text-transparent">
+                    MYBUDGET
+                </h1>
+            </div>
+
+            <!-- Sélecteur de Vue (Personnel & Commun) -->
+            <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button onclick="switchView('moi')" id="btn-moi" class="px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300">
+                    <i class="fa-solid fa-user mr-2"></i>Personnel
+                </button>
+                <button onclick="switchView('commun')" id="btn-commun" class="px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300">
+                    <i class="fa-solid fa-users mr-2"></i>Commun
+                </button>
+            </div>
+
+            <!-- Actions Rapides -->
+            <div class="flex items-center gap-3">
+                <button onclick="openModal('expenseModal')" class="bg-gradient-to-r from-neonPink to-neonPurple hover:opacity-90 text-white font-bold px-4 py-2 rounded-xl shadow-[0_0_15px_rgba(255,0,127,0.3)] transition-all flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus-circle"></i> + Dépense
+                </button>
+                <button onclick="openModal('incomeModal')" class="bg-gradient-to-r from-neonPink to-pink-600 hover:opacity-90 text-white font-bold px-4 py-2 rounded-xl shadow-[0_0_15px_rgba(255,0,127,0.2)] transition-all flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-money-bill-trend-up"></i> + Revenu
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Dashboard Widgets -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Solde du portefeuille actif (dynamique en couleur) -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonPink transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Solde Actuel</span>
+                <div class="text-3xl font-black mt-2" id="stat-balance">0,00 €</div>
+                <div class="text-xs text-neonPink mt-1 flex items-center gap-1 font-semibold">
+                    <i class="fa-solid fa-wallet"></i> <span id="stat-wallet-name">Portefeuille Personnel</span>
+                </div>
+            </div>
+
+            <!-- Total Dépensé ce mois -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonCyan transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Dépenses du mois</span>
+                <div class="text-3xl font-black mt-2 text-neonCyan" id="stat-expenses">0,00 €</div>
+                <div class="text-xs text-slate-400 mt-1">Sur l'ensemble des enveloppes</div>
+            </div>
+
+            <!-- Revenus du mois (Rose) -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonPink transition-all">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Revenus du Mois</span>
+                <div class="text-3xl font-black mt-2 text-neonPink" id="stat-incomes">0,00 €</div>
+                <div class="text-xs text-slate-400 mt-1">Salaires & entrées d'argent</div>
+            </div>
+        </div>
+
+        <!-- Section Enveloppes Budgétaires -->
+        <div class="bg-cardBg border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-black flex items-center gap-2 text-slate-800">
+                        <i class="fa-solid fa-envelope-open-text text-neonPink"></i> Enveloppes Budgétaires
+                    </h2>
+                    <p class="text-xs text-slate-400">Suivi en temps réel de vos dépenses par catégorie (couleurs personnalisées)</p>
+                </div>
+                <button onclick="openModal('envelopeModal')" class="bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold px-4 py-2 rounded-xl transition-all text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nouvelle Enveloppe
+                </button>
+            </div>
+
+            <!-- Grille des enveloppes -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="envelopes-container">
+                <!-- Généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Section Historique des Dépenses -->
+        <div class="bg-cardBg border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-black flex items-center gap-2 text-slate-800">
+                        <i class="fa-solid fa-clock-rotate-left text-neonCyan"></i> Historique des Opérations
+                    </h2>
+                    <p class="text-xs text-slate-400">Dépenses et revenus enregistrés</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="search-input" onkeyup="renderApp()" placeholder="Rechercher..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-neonCyan">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">Date</th>
+                            <th class="p-3">Libellé / Note</th>
+                            <th class="p-3">Portefeuille</th>
+                            <th class="p-3">Enveloppe</th>
+                            <th class="p-3">Payeur</th>
+                            <th class="p-3 text-right">Montant</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table" class="divide-y divide-slate-100">
+                        <!-- Généré dynamiquement -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL : Ajouter une dépense -->
+    <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-neonPink flex items-center gap-2">
+                    <i class="fa-solid fa-minus-circle"></i> Ajouter une dépense
+                </h3>
+                <button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
+                    <input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink font-bold text-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label>
+                        <select id="exp-wallet" onchange="updateEnvelopeOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                            <option value="moi">Personnel</option>
+                            <option value="commun">Commun</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label>
+                        <select id="exp-envelope" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                            <!-- Dynamique -->
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Payé par</label>
+                        <select id="exp-payer" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                            <option value="Moi">Moi</option>
+                            <option value="Conjoint">Conjoint</option>
+                            <option value="Compte Commun">Compte Commun</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
+                        <input type="date" id="exp-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note (facultatif)</label>
+                    <input type="text" id="exp-note" placeholder="Ex: Restaurant du samedi soir" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
+                    Valider la dépense
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL : Ajouter un revenu -->
+    <div id="incomeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-neonPink flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-trend-up"></i> Saisir un revenu
+                </h3>
+                <button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleIncomeSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
+                    <input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink font-bold text-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille cible</label>
+                        <select id="inc-wallet" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                            <option value="moi">Personnel</option>
+                            <option value="commun">Commun</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
+                        <input type="date" id="inc-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé / Source</label>
+                    <input type="text" id="inc-label" placeholder="Ex: Salaire, Prime, Remboursement..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-pink-600 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
+                    Enregistrer le revenu
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL : Nouvelle Enveloppe -->
+    <div id="envelopeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-purple-300 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-neonPurple flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus"></i> Créer une enveloppe
+                </h3>
+                <button onclick="closeModal('envelopeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleEnvelopeSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nom de l'enveloppe</label>
+                    <input type="text" id="env-name" placeholder="Ex: Loisirs, Vêtements, Resto..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label>
+                        <select id="env-wallet" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
+                            <option value="moi">Personnel</option>
+                            <option value="commun">Commun</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Budget Mensuel (€)</label>
+                        <input type="number" step="0.01" id="env-budget" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple font-bold text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Couleur distincte</label>
+                        <select id="env-color" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
+                            <option value="from-pink-500 to-rose-500 text-pink-500 border-pink-200 bg-pink-50">Rose Vif</option>
+                            <option value="from-purple-500 to-indigo-500 text-purple-500 border-purple-200 bg-purple-50">Violet</option>
+                            <option value="from-cyan-500 to-blue-500 text-cyan-500 border-cyan-200 bg-cyan-50">Cyan</option>
+                            <option value="from-emerald-500 to-teal-500 text-emerald-500 border-emerald-200 bg-emerald-50">Vert Émeraude</option>
+                            <option value="from-amber-500 to-orange-500 text-amber-500 border-amber-200 bg-amber-50">Ambre / Orange</option>
+                            <option value="from-violet-600 to-fuchsia-600 text-fuchsia-500 border-fuchsia-200 bg-fuchsia-50">Fuchsia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Type</label>
+                        <select id="env-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
+                            <option value="classic">Classique</option>
+                            <option value="savings">Épargne 🏦</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPurple to-pink-600 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
+                    Créer l'enveloppe
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logique Application -->
+    <script>
+        let currentView = 'moi'; // 'moi', 'commun'
+
+        let defaultData = {
+            envelopes: [
+                { id: '1', name: 'Courses', wallet: 'commun', budget: 450, type: 'classic', color: 'from-emerald-500 to-teal-500 text-emerald-600 border-emerald-200 bg-emerald-50' },
+                { id: '2', name: 'Essence / Transport', wallet: 'commun', budget: 150, type: 'classic', color: 'from-cyan-500 to-blue-500 text-cyan-600 border-cyan-200 bg-cyan-50' },
+                { id: '3', name: 'Restaurants & Sorties', wallet: 'commun', budget: 200, type: 'classic', color: 'from-amber-500 to-orange-500 text-amber-600 border-amber-200 bg-amber-50' },
+                { id: '4', name: 'Shopping Perso', wallet: 'moi', budget: 100, type: 'classic', color: 'from-pink-500 to-rose-500 text-pink-600 border-pink-200 bg-pink-50' },
+                { id: '5', name: 'Soins & Santé', wallet: 'moi', budget: 80, type: 'classic', color: 'from-purple-500 to-indigo-500 text-purple-600 border-purple-200 bg-purple-50' },
+                { id: '6', name: 'Épargne Vacances', wallet: 'commun', budget: 300, type: 'savings', color: 'from-violet-600 to-fuchsia-600 text-fuchsia-600 border-fuchsia-200 bg-fuchsia-50' }
+            ],
+            transactions: [
+                { id: 't1', date: '2026-10-01', label: 'Salaire', amount: 2500, wallet: 'moi', type: 'income', payer: 'Moi' },
+                { id: 't2', date: '2026-10-02', label: 'Supermarché Carrefour', amount: 85.50, wallet: 'commun', envelopeId: '1', type: 'expense', payer: 'Moi' },
+                { id: 't3', date: '2026-10-05', label: 'Restaurant italien', amount: 64.00, wallet: 'commun', envelopeId: '3', type: 'expense', payer: 'Conjoint' }
+            ]
+        };
+
+        let db = JSON.parse(localStorage.getItem('my_budget_db')) || defaultData;
+
+        function saveDB() {
+            localStorage.setItem('my_budget_db', JSON.stringify(db));
+        }
+
+        document.getElementById('exp-date').valueAsDate = new Date();
+        document.getElementById('inc-date').valueAsDate = new Date();
+
+        function switchView(view) {
+            currentView = view;
+            
+            ['moi', 'commun'].forEach(v => {
+                const btn = document.getElementById(`btn-${v}`);
+                if (v === view) {
+                    btn.className = "px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-neonPink to-neonPurple text-white shadow-sm";
+                } else {
+                    btn.className = "px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-800";
+                }
+            });
+
+            renderApp();
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'expenseModal') {
+                document.getElementById('exp-wallet').value = currentView;
+                updateEnvelopeOptions();
+            } else if (id === 'incomeModal') {
+                document.getElementById('inc-wallet').value = currentView;
+            } else if (id === 'envelopeModal') {
+                document.getElementById('env-wallet').value = currentView;
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function updateEnvelopeOptions() {
+            const wallet = document.getElementById('exp-wallet').value;
+            const select = document.getElementById('exp-envelope');
+            select.innerHTML = '';
+            
+            const filteredEnvs = db.envelopes.filter(e => e.wallet === wallet);
+            filteredEnvs.forEach(env => {
+                const opt = document.createElement('option');
+                opt.value = env.id;
+                opt.textContent = env.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function handleExpenseSubmit(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const wallet = document.getElementById('exp-wallet').value;
+            const envelopeId = document.getElementById('exp-envelope').value;
+            const payer = document.getElementById('exp-payer').value;
+            const date = document.getElementById('exp-date').value;
+            const note = document.getElementById('exp-note').value;
+
+            const selectedEnv = db.envelopes.find(e => e.id === envelopeId);
+            const label = note.trim() !== '' ? note : (selectedEnv ? selectedEnv.name : 'Dépense');
+
+            const newTx = {
+                id: 't_' + Date.now(),
+                date,
+                label,
+                amount,
+                wallet,
+                envelopeId,
+                type: 'expense',
+                payer
+            };
+
+            db.transactions.unshift(newTx);
+            saveDB();
+            closeModal('expenseModal');
+            event.target.reset();
+            document.getElementById('exp-date').valueAsDate = new Date();
+            renderApp();
+        }
+
+        function handleIncomeSubmit(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('inc-amount').value);
+            const wallet = document.getElementById('inc-wallet').value;
+            const date = document.getElementById('inc-date').value;
+            const label = document.getElementById('inc-label').value;
+
+            const newTx = {
+                id: 't_' + Date.now(),
+                date,
+                label,
+                amount,
+                wallet,
+                type: 'income',
+                payer: '-'
+            };
+
+            db.transactions.unshift(newTx);
+            saveDB();
+            closeModal('incomeModal');
+            event.target.reset();
+            document.getElementById('inc-date').valueAsDate = new Date();
+            renderApp();
+        }
+
+        function handleEnvelopeSubmit(event) {
+            event.preventDefault();
+            const name = document.getElementById('env-name').value;
+            const wallet = document.getElementById('env-wallet').value;
+            const budget = parseFloat(document.getElementById('env-budget').value);
+            const color = document.getElementById('env-color').value;
+            const type = document.getElementById('env-type').value;
+
+            const newEnv = {
+                id: 'e_' + Date.now(),
+                name,
+                wallet,
+                budget,
+                type,
+                color
+            };
+
+            db.envelopes.push(newEnv);
+            saveDB();
+            closeModal('envelopeModal');
+            event.target.reset();
+            renderApp();
+        }
+
+        function deleteTransaction(id) {
+            db.transactions = db.transactions.filter(t => t.id !== id);
+            saveDB();
+            renderApp();
+        }
+
+        function deleteEnvelope(id) {
+            db.envelopes = db.envelopes.filter(e => e.id !== id);
+            db.transactions = db.transactions.filter(t => t.envelopeId !== id);
+            saveDB();
+            renderApp();
+        }
+
+        function renderApp() {
+            // Update Wallet display name & balance label
+            const walletTitle = currentView === 'moi' ? 'Portefeuille Personnel' : 'Portefeuille Commun';
+            document.getElementById('stat-wallet-name').textContent = walletTitle;
+
+            // Calculate Totals for current view
+            let totalIncomes = 0;
+            let totalExpenses = 0;
+
+            db.transactions.forEach(t => {
+                if (t.wallet === currentView) {
+                    if (t.type === 'income') {
+                        totalIncomes += t.amount;
+                    } else if (t.type === 'expense') {
+                        totalExpenses += t.amount;
+                    }
+                }
+            });
+
+            const balance = totalIncomes - totalExpenses;
+
+            document.getElementById('stat-balance').textContent = balance.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+            document.getElementById('stat-balance').className = `text-3xl font-black mt-2 ${balance >= 0 ? 'text-emerald-600' : 'text-neonPink'}`;
+            document.getElementById('stat-expenses').textContent = totalExpenses.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+            document.getElementById('stat-incomes').textContent = totalIncomes.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+
+            // Render Envelopes
+            const envContainer = document.getElementById('envelopes-container');
+            envContainer.innerHTML = '';
+
+            const currentEnvs = db.envelopes.filter(e => e.wallet === currentView);
+
+            if (currentEnvs.length === 0) {
+                envContainer.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-sm">Aucune enveloppe dans ce portefeuille. Créez-en une !</div>`;
+            } else {
+                currentEnvs.forEach(env => {
+                    // Calculate spent in this envelope
+                    let spent = 0;
+                    db.transactions.forEach(t => {
+                        if (t.envelopeId === env.id) {
+                            spent += t.amount;
+                        }
+                    });
+
+                    const percent = env.budget > 0 ? Math.min(Math.round((spent / env.budget) * 100), 100) : 0;
+                    const remaining = env.budget - spent;
+
+                    // Extract color parts
+                    const cardHtml = `
+                        <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs ${env.color.split(' ')[2]}">
+                                            <i class="fa-solid ${env.type === 'savings' ? 'fa-piggy-bank' : 'fa-folder'}"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 text-sm">${env.name}</h3>
+                                            <span class="text-[10px] uppercase font-bold text-slate-400">${env.type === 'savings' ? 'Épargne' : 'Budget'}</span>
+                                        </div>
+                                    </div>
+                                    <button onclick="deleteEnvelope('${env.id}')" class="text-slate-300 hover:text-neonPink transition-colors text-xs">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-baseline mb-2 text-xs">
+                                    <span class="text-slate-500 font-semibold">Dépensé : <strong class="text-slate-800">${spent.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</strong></span>
+                                    <span class="text-slate-400">Max: ${env.budget.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
+                                    <div class="h-full bg-gradient-to-r ${env.color.split(' ')[0]} ${env.color.split(' ')[1]} rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                <span class="text-slate-400">Restant</span>
+                                <span class="font-bold ${remaining >= 0 ? 'text-emerald-600' : 'text-neonPink'}">${remaining.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
+                            </div>
+                        </div>
+                    `;
+                    envContainer.insertAdjacentHTML('beforeend', cardHtml);
+                });
+            }
+
+            // Render Transactions Table
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const txTable = document.getElementById('transactions-table');
+            txTable.innerHTML = '';
+
+            const filteredTxs = db.transactions.filter(t => {
+                const matchesView = t.wallet === currentView;
+                const matchesSearch = t.label.toLowerCase().includes(searchVal) || t.payer.toLowerCase().includes(searchVal);
+                return matchesView && matchesSearch;
+            });
+
+            if (filteredTxs.length === 0) {
+                txTable.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-sm">Aucune opération trouvée.</td></tr>`;
+            } else {
+                filteredTxs.forEach(t => {
+                    let envName = '-';
+                    if (t.envelopeId) {
+                        const envObj = db.envelopes.find(e => e.id === t.envelopeId);
+                        if (envObj) envName = envObj.name;
+                    }
+
+                    const isIncome = t.type === 'income';
+                    const rowHtml = `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-3 text-xs text-slate-500">${t.date}</td>
+                            <td class="p-3 font-semibold text-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid ${isIncome ? 'fa-arrow-down text-emerald-500' : 'fa-arrow-up text-neonPink'} text-xs"></i>
+                                    ${t.label}
+                                </div>
+                            </td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${t.wallet === 'moi' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-cyan-50 text-cyan-600 border border-cyan-100'}">${t.wallet}</span></td>
+                            <td class="p-3 text-slate-600 text-xs">${envName}</td>
+                            <td class="p-3 text-slate-600 text-xs">${t.payer}</td>
+                            <td class="p-3 text-right font-black ${isIncome ? 'text-emerald-600' : 'text-slate-800'}">
+                                ${isIncome ? '+' : '-'}${t.amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-neonPink transition-colors text-xs">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    txTable.insertAdjacentHTML('beforeend', rowHtml);
+                });
+            }
+        }
+
+        // Initial setup on load
+        window.onload = function() {
+            switchView('moi');
+        };
+    </script>
+</body>
+</html>
