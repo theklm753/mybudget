@@ -3,69 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBudget - Gestion de Budget Couple</title>
-    <!-- Tailwind CSS CDN -->
+    <title>MyBudget - Gestion de Budget</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="data.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        neonPink: '#ff007f',
-                        neonPurple: '#9d00ff',
-                        neonCyan: '#0099ff',
-                        neonYellow: '#d97706',
-                        neonGreen: '#059669',
-                        lightBg: '#f8fafc',
-                        cardBg: '#ffffff',
-                        cardHover: '#f1f5f9'
+                        neonPink: '#ff007f', neonPurple: '#9d00ff', neonCyan: '#0099ff',
+                        lightBg: '#f8fafc', cardBg: '#ffffff'
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome pour les icônes -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chargement des données externes -->
+    <script src="data.js"></script>
 </head>
-<body class="bg-lightBg text-slate-800 font-sans min-h-screen selection:bg-neonPink selection:text-white">
+<body class="bg-lightBg text-slate-800 font-sans min-h-screen selection:bg-neonPink selection:text-white pb-20">
 
     <!-- Header / Navbar -->
-    <header class="bg-cardBg border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-opacity-90 shadow-sm">
+    <header class="bg-cardBg border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md bg-opacity-90 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neonPink via-neonPurple to-neonCyan flex items-center justify-center shadow-[0_0_15px_rgba(255,0,127,0.3)]">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neonPink via-neonPurple to-neonCyan flex items-center justify-center shadow-md">
                     <i class="fa-solid fa-wallet text-white text-lg"></i>
                 </div>
-                <h1 class="text-2xl font-black tracking-wider bg-gradient-to-r from-neonPink via-neonPurple to-neonCyan bg-clip-text text-transparent">
+                <h1 class="text-2xl font-black tracking-wider bg-gradient-to-r from-neonPink via-neonPurple to-neonCyan bg-clip-text text-transparent hidden sm:block">
                     MYBUDGET
                 </h1>
             </div>
 
-            <!-- Sélecteur de Vue (Personnel & Commun) -->
-            <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                <button onclick="switchView('moi')" id="btn-moi" class="px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300">
-                    <i class="fa-solid fa-user mr-2"></i>Personnel
-                </button>
-                <button onclick="switchView('commun')" id="btn-commun" class="px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300">
-                    <i class="fa-solid fa-users mr-2"></i>Commun
-                </button>
+            <!-- Navigation des Mois -->
+            <div class="flex items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
+                <button onclick="changeMonth(-1)" class="px-3 py-1 text-slate-400 hover:text-slate-800 transition-colors"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="px-4 font-black text-slate-700 min-w-[140px] text-center" id="current-month-display">Octobre 2026</div>
+                <button onclick="changeMonth(1)" class="px-3 py-1 text-slate-400 hover:text-slate-800 transition-colors"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
 
-            <!-- Actions Rapides -->
-            <div class="flex items-center gap-3">
-                <!-- NOUVEAU BOUTON SAUVEGARDE -->
-                <button onclick="exportDB()" class="bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold px-4 py-2 rounded-xl transition-all text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-download"></i> Sauvegarder
-                </button>
-                
-                <button onclick="openModal('expenseModal')" class="bg-gradient-to-r from-neonPink to-neonPurple hover:opacity-90 text-white font-bold px-4 py-2 rounded-xl shadow-[0_0_15px_rgba(255,0,127,0.3)] transition-all flex items-center gap-2 text-sm">
-                    <i class="fa-solid fa-plus-circle"></i> + Dépense
-                </button>
-                <button onclick="openModal('incomeModal')" class="bg-gradient-to-r from-neonPink to-pink-600 hover:opacity-90 text-white font-bold px-4 py-2 rounded-xl shadow-[0_0_15px_rgba(255,0,127,0.2)] transition-all flex items-center gap-2 text-sm">
-                    <i class="fa-solid fa-money-bill-trend-up"></i> + Revenu
-                </button>
+            <!-- Sélecteur de Vue -->
+            <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                <button onclick="switchView('moi')" id="btn-moi" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-user mr-1.5"></i>Personnel</button>
+                <button onclick="switchView('commun')" id="btn-commun" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-users mr-1.5"></i>Commun</button>
+                <button onclick="switchView('pro')" id="btn-pro" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-briefcase mr-1.5"></i>Pro</button>
             </div>
         </div>
     </header>
@@ -73,29 +59,46 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Dashboard Widgets -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Solde du portefeuille actif (dynamique en couleur) -->
-            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonPink transition-all">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Solde Actuel</span>
-                <div class="text-3xl font-black mt-2" id="stat-balance">0,00 €</div>
-                <div class="text-xs text-neonPink mt-1 flex items-center gap-1 font-semibold">
-                    <i class="fa-solid fa-wallet"></i> <span id="stat-wallet-name">Portefeuille Personnel</span>
+        <!-- Dashboard Widgets & Graphique -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            
+            <!-- Colonne Kpis (3 colonnes) -->
+            <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Solde -->
+                <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden group">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold uppercase text-slate-400">Solde Restant</span>
+                        <i class="fa-solid fa-scale-balanced text-slate-200 text-2xl"></i>
+                    </div>
+                    <div class="text-3xl font-black mt-2" id="stat-balance">0,00 €</div>
+                    <div class="text-xs text-slate-400 mt-2 font-semibold">Budget global <span id="stat-total-budget" class="text-slate-600">0€</span></div>
+                    <!-- Jauge globale -->
+                    <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
+                        <div id="global-progress" class="h-2 rounded-full bg-gradient-to-r from-neonCyan to-neonPurple transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Dépenses -->
+                <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
+                    <span class="text-xs font-bold uppercase text-slate-400">Dépenses du mois</span>
+                    <div class="text-3xl font-black mt-2 text-neonCyan" id="stat-expenses">0,00 €</div>
+                    <button onclick="openModal('expenseModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonCyan font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus-circle"></i> Saisir Dépense</button>
+                </div>
+
+                <!-- Revenus -->
+                <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
+                    <span class="text-xs font-bold uppercase text-slate-400">Revenus du Mois</span>
+                    <div class="text-3xl font-black mt-2 text-neonPink" id="stat-incomes">0,00 €</div>
+                    <button onclick="openModal('incomeModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonPink font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-money-bill-trend-up"></i> Saisir Revenu</button>
                 </div>
             </div>
 
-            <!-- Total Dépensé ce mois -->
-            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonCyan transition-all">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Dépenses du mois</span>
-                <div class="text-3xl font-black mt-2 text-neonCyan" id="stat-expenses">0,00 €</div>
-                <div class="text-xs text-slate-400 mt-1">Sur l'ensemble des enveloppes</div>
-            </div>
-
-            <!-- Revenus du mois (Rose) -->
-            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative overflow-hidden shadow-sm group hover:border-neonPink transition-all">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Revenus du Mois</span>
-                <div class="text-3xl font-black mt-2 text-neonPink" id="stat-incomes">0,00 €</div>
-                <div class="text-xs text-slate-400 mt-1">Salaires & entrées d'argent</div>
+            <!-- Colonne Graphique Camembert -->
+            <div class="bg-cardBg border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center">
+                <span class="text-xs font-bold uppercase text-slate-400 mb-2 w-full text-left">Répartition</span>
+                <div class="w-full h-32 relative">
+                    <canvas id="expensePieChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -104,508 +107,488 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
                     <h2 class="text-xl font-black flex items-center gap-2 text-slate-800">
-                        <i class="fa-solid fa-envelope-open-text text-neonPink"></i> Enveloppes Budgétaires
+                        <i class="fa-solid fa-envelope-open-text text-neonPink"></i> Enveloppes du mois
                     </h2>
-                    <p class="text-xs text-slate-400">Suivi en temps réel de vos dépenses par catégorie (couleurs personnalisées)</p>
                 </div>
-                <button onclick="openModal('envelopeModal')" class="bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold px-4 py-2 rounded-xl transition-all text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Nouvelle Enveloppe
-                </button>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="prepareBilan()" class="flex-1 bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 font-bold px-4 py-2 rounded-xl transition-all text-sm flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-scale-unbalanced"></i> Faire le Bilan
+                    </button>
+                    <button onclick="openModal('envelopeModal')" class="flex-1 bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold px-4 py-2 rounded-xl transition-all text-sm flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Créer
+                    </button>
+                </div>
             </div>
 
             <!-- Grille des enveloppes -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="envelopes-container">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="envelopes-container">
                 <!-- Généré dynamiquement -->
             </div>
         </div>
 
-        <!-- Section Historique des Dépenses -->
+        <!-- Historique des Dépenses -->
         <div class="bg-cardBg border border-slate-200 rounded-3xl p-6 shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div>
-                    <h2 class="text-xl font-black flex items-center gap-2 text-slate-800">
-                        <i class="fa-solid fa-clock-rotate-left text-neonCyan"></i> Historique des Opérations
-                    </h2>
-                    <p class="text-xs text-slate-400">Dépenses et revenus enregistrés</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="search-input" onkeyup="renderApp()" placeholder="Rechercher..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-neonCyan">
-                </div>
-            </div>
-
+            <h2 class="text-xl font-black flex items-center gap-2 text-slate-800 mb-4">
+                <i class="fa-solid fa-clock-rotate-left text-neonCyan"></i> Historique
+            </h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
-                            <th class="p-3">Date</th>
-                            <th class="p-3">Libellé / Note</th>
-                            <th class="p-3">Portefeuille</th>
-                            <th class="p-3">Enveloppe</th>
-                            <th class="p-3">Payeur</th>
-                            <th class="p-3 text-right">Montant</th>
-                            <th class="p-3 text-center">Action</th>
+                            <th class="p-3">Date</th><th class="p-3">Libellé</th><th class="p-3">Enveloppe</th><th class="p-3 text-right">Montant</th>
                         </tr>
                     </thead>
-                    <tbody id="transactions-table" class="divide-y divide-slate-100">
-                        <!-- Généré dynamiquement -->
-                    </tbody>
+                    <tbody id="transactions-table" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
-
     </main>
 
-    <!-- MODAL : Ajouter une dépense -->
-    <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-neonPink flex items-center gap-2">
-                    <i class="fa-solid fa-minus-circle"></i> Ajouter une dépense
-                </h3>
-                <button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- MODAL : Bilan du Mois -->
+    <div id="bilanModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-amber-300 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-scale-unbalanced"></i> Bilan du mois</h3>
+                <button onclick="closeModal('bilanModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <form onsubmit="handleExpenseSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
-                    <input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink font-bold text-lg">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label>
-                        <select id="exp-wallet" onchange="updateEnvelopeOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                            <option value="moi">Personnel</option>
-                            <option value="commun">Commun</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label>
-                        <select id="exp-envelope" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                            <!-- Dynamique -->
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Payé par</label>
-                        <select id="exp-payer" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                            <option value="Moi">Moi</option>
-                            <option value="Conjoint">Conjoint</option>
-                            <option value="Compte Commun">Compte Commun</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
-                        <input type="date" id="exp-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note (facultatif)</label>
-                    <input type="text" id="exp-note" placeholder="Ex: Restaurant du samedi soir" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
-                    Valider la dépense
-                </button>
-            </form>
+            <div class="p-6 overflow-y-auto space-y-6" id="bilan-content">
+                <!-- Rempli dynamiquement par JS -->
+            </div>
+            <div class="p-6 border-t border-slate-100 shrink-0">
+                <button onclick="executeBilan()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90">Valider les transferts</button>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL : Ajouter un revenu -->
-    <div id="incomeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
+    <!-- MODAL : Graphique Historique Enveloppe -->
+    <div id="historyModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg rounded-3xl w-full max-w-lg p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-neonPink flex items-center gap-2">
-                    <i class="fa-solid fa-money-bill-trend-up"></i> Saisir un revenu
-                </h3>
-                <button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="text-lg font-black text-slate-800 flex items-center gap-2" id="hist-title"><i class="fa-solid fa-chart-bar"></i> Historique</h3>
+                <button onclick="closeModal('historyModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form onsubmit="handleIncomeSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
-                    <input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink font-bold text-lg">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille cible</label>
-                        <select id="inc-wallet" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                            <option value="moi">Personnel</option>
-                            <option value="commun">Commun</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
-                        <input type="date" id="inc-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé / Source</label>
-                    <input type="text" id="inc-label" placeholder="Ex: Salaire, Prime, Remboursement..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-800 focus:outline-none focus:border-neonPink text-sm">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-pink-600 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
-                    Enregistrer le revenu
-                </button>
-            </form>
+            <canvas id="envHistoryChart" class="w-full h-64"></canvas>
         </div>
     </div>
 
-    <!-- MODAL : Nouvelle Enveloppe -->
-    <div id="envelopeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-purple-300 rounded-3xl w-full max-w-md p-6 shadow-xl relative">
+    <!-- MODAL : Ajouter/Modifier Enveloppe -->
+    <div id="envelopeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-neonPurple flex items-center gap-2">
-                    <i class="fa-solid fa-folder-plus"></i> Créer une enveloppe
-                </h3>
+                <h3 class="text-lg font-black text-neonPurple flex items-center gap-2" id="env-modal-title"><i class="fa-solid fa-folder-plus"></i> Créer/Modifier</h3>
                 <button onclick="closeModal('envelopeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form onsubmit="handleEnvelopeSubmit(event)" class="space-y-4">
+                <input type="hidden" id="env-id">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nom de l'enveloppe</label>
-                    <input type="text" id="env-name" placeholder="Ex: Loisirs, Vêtements, Resto..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nom</label>
+                    <input type="text" id="env-name" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-sm focus:border-neonPurple focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label>
-                        <select id="env-wallet" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
-                            <option value="moi">Personnel</option>
-                            <option value="commun">Commun</option>
+                        <select id="env-wallet" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm focus:border-neonPurple focus:outline-none">
+                            <option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Budget Mensuel (€)</label>
-                        <input type="number" step="0.01" id="env-budget" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple font-bold text-sm">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Budget Mensuel</label>
+                        <input type="number" step="0.01" id="env-budget" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 font-bold text-sm focus:border-neonPurple focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Couleur distincte</label>
-                        <select id="env-color" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
-                            <option value="from-pink-500 to-rose-500 text-pink-500 border-pink-200 bg-pink-50">Rose Vif</option>
-                            <option value="from-purple-500 to-indigo-500 text-purple-500 border-purple-200 bg-purple-50">Violet</option>
-                            <option value="from-cyan-500 to-blue-500 text-cyan-500 border-cyan-200 bg-cyan-50">Cyan</option>
-                            <option value="from-emerald-500 to-teal-500 text-emerald-500 border-emerald-200 bg-emerald-50">Vert Émeraude</option>
-                            <option value="from-amber-500 to-orange-500 text-amber-500 border-amber-200 bg-amber-50">Ambre / Orange</option>
-                            <option value="from-violet-600 to-fuchsia-600 text-fuchsia-500 border-fuchsia-200 bg-fuchsia-50">Fuchsia</option>
-                        </select>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Alerte (% consommé)</label>
+                        <input type="number" id="env-alert" value="80" class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-sm focus:border-neonPurple focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Type</label>
-                        <select id="env-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:border-neonPurple text-sm">
-                            <option value="classic">Classique</option>
-                            <option value="savings">Épargne 🏦</option>
+                        <select id="env-type" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm focus:border-neonPurple focus:outline-none">
+                            <option value="classic">Classique</option><option value="savings">Épargne 🏦</option>
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-neonPurple to-pink-600 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90 transition-all">
-                    Créer l'enveloppe
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Icône</label>
+                        <select id="env-icon" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm font-awesome focus:border-neonPurple focus:outline-none">
+                            <option value="fa-basket-shopping">🛒 Courses</option>
+                            <option value="fa-utensils">🍽️ Restaurant</option>
+                            <option value="fa-car">🚗 Transport</option>
+                            <option value="fa-house">🏠 Maison</option>
+                            <option value="fa-baby">👶 Bébé</option>
+                            <option value="fa-heart-pulse">❤️ Santé</option>
+                            <option value="fa-shirt">👕 Vêtements</option>
+                            <option value="fa-hammer">🔨 Bricolage</option>
+                            <option value="fa-palette">🎨 Matériel Art</option>
+                            <option value="fa-book">📚 Édition</option>
+                            <option value="fa-laptop">💻 Digital/Web</option>
+                            <option value="fa-plane">✈️ Vacances</option>
+                            <option value="fa-piggy-bank">🐷 Épargne</option>
+                            <option value="fa-ellipsis">🔹 Autre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Couleur</label>
+                        <select id="env-color" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm focus:border-neonPurple focus:outline-none">
+                            <option value="pink">Rose Vif</option>
+                            <option value="purple">Violet</option>
+                            <option value="cyan">Cyan</option>
+                            <option value="emerald">Vert Émeraude</option>
+                            <option value="amber">Orange</option>
+                            <option value="red">Rouge</option>
+                            <option value="blue">Bleu</option>
+                            <option value="fuchsia">Fuchsia</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPurple to-pink-600 text-white font-bold py-3 rounded-xl shadow-md hover:opacity-90">Enregistrer</button>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Logique Application -->
-    <script>
-        let currentView = 'moi'; // 'moi', 'commun'
-        
-        // Si le navigateur a une version plus récente en mémoire, on la prend, sinon on prend defaultData
-        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.defaultData;
+    <!-- MODALS DÉPENSE ET REVENU INCLUS -->
+    <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl"><div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div><form onsubmit="handleExpenseSubmit(event)" class="space-y-4"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label><select id="exp-envelope" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="exp-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note</label><input type="text" id="exp-note" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div></div><button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md">Valider</button></form></div>
+    </div>
+    <div id="incomeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl"><div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-money-bill-trend-up"></i> Revenu</h3><button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div><form onsubmit="handleIncomeSubmit(event)" class="space-y-4"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="inc-wallet" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="inc-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé</label><input type="text" id="inc-label" required class="w-full bg-slate-50 border rounded-xl px-4 py-2 text-sm"></div><button type="submit" class="w-full bg-gradient-to-r from-neonPink to-pink-600 text-white font-bold py-3 rounded-xl shadow-md">Valider</button></form></div>
+    </div>
 
-        // Fonction de sauvegarde SILENCIEUSE (ne fait plus de téléchargement)
+    <!-- LOGIQUE JAVASCRIPT -->
+    <script>
+        // INIT DATA
+        const fallbackData = {
+            envelopes: [
+                { id: '1', name: 'Courses Bébé & Maison', wallet: 'commun', budget: 500, type: 'classic', color: 'emerald', icon: 'fa-baby', alertThreshold: 80 },
+                { id: '2', name: 'Shopping & Perso', wallet: 'moi', budget: 150, type: 'classic', color: 'pink', icon: 'fa-shirt', alertThreshold: 80 },
+                { id: '3', name: 'Édition (SOFI) & Impression', wallet: 'pro', budget: 300, type: 'classic', color: 'purple', icon: 'fa-book', alertThreshold: 90 },
+                { id: '4', name: 'Matériel Illustration', wallet: 'pro', budget: 100, type: 'classic', color: 'cyan', icon: 'fa-palette', alertThreshold: 80 }
+            ],
+            transactions: []
+        };
+        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || fallbackData;
+
+        // Configuration Couleurs
+        const colorMap = {
+            'pink': 'from-pink-500 to-rose-500 text-pink-600 border-pink-200 bg-pink-50',
+            'purple': 'from-purple-500 to-indigo-500 text-purple-600 border-purple-200 bg-purple-50',
+            'cyan': 'from-cyan-500 to-blue-500 text-cyan-600 border-cyan-200 bg-cyan-50',
+            'emerald': 'from-emerald-500 to-teal-500 text-emerald-600 border-emerald-200 bg-emerald-50',
+            'amber': 'from-amber-500 to-orange-500 text-amber-600 border-amber-200 bg-amber-50',
+            'red': 'from-red-500 to-rose-600 text-red-600 border-red-200 bg-red-50',
+            'blue': 'from-blue-500 to-indigo-500 text-blue-600 border-blue-200 bg-blue-50',
+            'fuchsia': 'from-fuchsia-500 to-pink-500 text-fuchsia-600 border-fuchsia-200 bg-fuchsia-50'
+        };
+
+        // État de l'application
+        let currentView = 'commun';
+        let viewDate = new Date(); // Date utilisée pour l'affichage (mois par mois)
+        let pieChartInstance = null;
+        let histChartInstance = null;
+        let activeBilanData = [];
+
         function saveDB() {
             localStorage.setItem('my_budget_db', JSON.stringify(db));
-        }
-
-        // NOUVELLE FONCTION : Déclenchée uniquement au clic sur le bouton "Sauvegarder"
-        function exportDB() {
-            const dataStr = "const defaultData = " + JSON.stringify(db, null, 4) + ";";
+            const dataStr = "let db = " + JSON.stringify(db, null, 4) + ";";
             const blob = new Blob([dataStr], { type: "text/javascript" });
             const url = URL.createObjectURL(blob);
-            
-            const downloadLink = document.createElement("a");
-            downloadLink.href = url;
-            downloadLink.download = "data.js";
-            
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(url);
+            const a = document.createElement("a");
+            a.href = url; a.download = "data.js";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            renderApp();
         }
 
-        document.getElementById('exp-date').valueAsDate = new Date();
-        document.getElementById('inc-date').valueAsDate = new Date();
+        // --- NAVIGATION MOIS ---
+        function getMonthKey(date) { return date.toISOString().substring(0,7); }
+        function changeMonth(delta) {
+            viewDate.setMonth(viewDate.getMonth() + delta);
+            renderApp();
+        }
 
+        // --- VUES & MODALS ---
         function switchView(view) {
             currentView = view;
-            
-            ['moi', 'commun'].forEach(v => {
+            ['moi', 'commun', 'pro'].forEach(v => {
                 const btn = document.getElementById(`btn-${v}`);
-                if (v === view) {
-                    btn.className = "px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-neonPink to-neonPurple text-white shadow-sm";
-                } else {
-                    btn.className = "px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-800";
-                }
+                btn.className = v === view ? "px-4 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-neonPink to-neonPurple text-white shadow-md" 
+                                           : "px-4 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200";
             });
-
             renderApp();
         }
 
-        function openModal(id) {
+        function openModal(id, envId = null) {
             document.getElementById(id).classList.remove('hidden');
-            if (id === 'expenseModal') {
-                document.getElementById('exp-wallet').value = currentView;
-                updateEnvelopeOptions();
-            } else if (id === 'incomeModal') {
-                document.getElementById('inc-wallet').value = currentView;
-            } else if (id === 'envelopeModal') {
-                document.getElementById('env-wallet').value = currentView;
-            }
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-
-        function updateEnvelopeOptions() {
-            const wallet = document.getElementById('exp-wallet').value;
-            const select = document.getElementById('exp-envelope');
-            select.innerHTML = '';
-            
-            const filteredEnvs = db.envelopes.filter(e => e.wallet === wallet);
-            filteredEnvs.forEach(env => {
-                const opt = document.createElement('option');
-                opt.value = env.id;
-                opt.textContent = env.name;
-                select.appendChild(opt);
-            });
-        }
-
-        function handleExpenseSubmit(event) {
-            event.preventDefault();
-            const amount = parseFloat(document.getElementById('exp-amount').value);
-            const wallet = document.getElementById('exp-wallet').value;
-            const envelopeId = document.getElementById('exp-envelope').value;
-            const payer = document.getElementById('exp-payer').value;
-            const date = document.getElementById('exp-date').value;
-            const note = document.getElementById('exp-note').value;
-
-            const selectedEnv = db.envelopes.find(e => e.id === envelopeId);
-            const label = note.trim() !== '' ? note : (selectedEnv ? selectedEnv.name : 'Dépense');
-
-            const newTx = {
-                id: 't_' + Date.now(),
-                date,
-                label,
-                amount,
-                wallet,
-                envelopeId,
-                type: 'expense',
-                payer
-            };
-
-            db.transactions.unshift(newTx);
-            saveDB();
-            closeModal('expenseModal');
-            event.target.reset();
-            document.getElementById('exp-date').valueAsDate = new Date();
-            renderApp();
-        }
-
-        function handleIncomeSubmit(event) {
-            event.preventDefault();
-            const amount = parseFloat(document.getElementById('inc-amount').value);
-            const wallet = document.getElementById('inc-wallet').value;
-            const date = document.getElementById('inc-date').value;
-            const label = document.getElementById('inc-label').value;
-
-            const newTx = {
-                id: 't_' + Date.now(),
-                date,
-                label,
-                amount,
-                wallet,
-                type: 'income',
-                payer: '-'
-            };
-
-            db.transactions.unshift(newTx);
-            saveDB();
-            closeModal('incomeModal');
-            event.target.reset();
-            document.getElementById('inc-date').valueAsDate = new Date();
-            renderApp();
-        }
-
-        function handleEnvelopeSubmit(event) {
-            event.preventDefault();
-            const name = document.getElementById('env-name').value;
-            const wallet = document.getElementById('env-wallet').value;
-            const budget = parseFloat(document.getElementById('env-budget').value);
-            const color = document.getElementById('env-color').value;
-            const type = document.getElementById('env-type').value;
-
-            const newEnv = {
-                id: 'e_' + Date.now(),
-                name,
-                wallet,
-                budget,
-                type,
-                color
-            };
-
-            db.envelopes.push(newEnv);
-            saveDB();
-            closeModal('envelopeModal');
-            event.target.reset();
-            renderApp();
-        }
-
-        function deleteTransaction(id) {
-            db.transactions = db.transactions.filter(t => t.id !== id);
-            saveDB();
-            renderApp();
-        }
-
-        function deleteEnvelope(id) {
-            db.envelopes = db.envelopes.filter(e => e.id !== id);
-            db.transactions = db.transactions.filter(t => t.envelopeId !== id);
-            saveDB();
-            renderApp();
-        }
-
-        function renderApp() {
-            // Update Wallet display name & balance label
-            const walletTitle = currentView === 'moi' ? 'Portefeuille Personnel' : 'Portefeuille Commun';
-            document.getElementById('stat-wallet-name').textContent = walletTitle;
-
-            // Calculate Totals for current view
-            let totalIncomes = 0;
-            let totalExpenses = 0;
-
-            db.transactions.forEach(t => {
-                if (t.wallet === currentView) {
-                    if (t.type === 'income') {
-                        totalIncomes += t.amount;
-                    } else if (t.type === 'expense') {
-                        totalExpenses += t.amount;
-                    }
+            if(id === 'envelopeModal') {
+                document.getElementById('env-id').value = envId || '';
+                if(envId) {
+                    const e = db.envelopes.find(x => x.id === envId);
+                    document.getElementById('env-modal-title').innerHTML = `<i class="fa-solid fa-pen"></i> Modifier`;
+                    document.getElementById('env-name').value = e.name;
+                    document.getElementById('env-wallet').value = e.wallet;
+                    document.getElementById('env-budget').value = e.budget;
+                    document.getElementById('env-alert').value = e.alertThreshold || 80;
+                    document.getElementById('env-type').value = e.type;
+                    document.getElementById('env-color').value = e.color || 'pink';
+                    document.getElementById('env-icon').value = e.icon || 'fa-basket-shopping';
+                } else {
+                    document.getElementById('env-modal-title').innerHTML = `<i class="fa-solid fa-folder-plus"></i> Créer`;
+                    document.getElementById('env-wallet').value = currentView;
+                    document.getElementById('env-name').value = ''; document.getElementById('env-budget').value = '';
                 }
-            });
+            }
+            if (id === 'expenseModal') { document.getElementById('exp-wallet').value = currentView; updateEnvelopeOptions(); document.getElementById('exp-date').valueAsDate = new Date(); }
+            if (id === 'incomeModal') { document.getElementById('inc-wallet').value = currentView; document.getElementById('inc-date').valueAsDate = new Date(); }
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function toggleMenu(id) {
+            document.querySelectorAll('.env-menu').forEach(el => { if(el.id !== 'menu-'+id) el.classList.add('hidden'); });
+            document.getElementById('menu-'+id).classList.toggle('hidden');
+        }
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.env-card')) document.querySelectorAll('.env-menu').forEach(el => el.classList.add('hidden'));
+        });
 
-            const balance = totalIncomes - totalExpenses;
+        // --- LOGIQUE RENDU ---
+        function renderApp() {
+            const mKey = getMonthKey(viewDate);
+            document.getElementById('current-month-display').innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
+            
+            let envs = db.envelopes.filter(e => e.wallet === currentView);
+            let txs = db.transactions.filter(t => t.wallet === currentView && t.date.startsWith(mKey));
+            
+            // Calculs globaux
+            let totalIncomes = txs.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
+            let totalExpenses = txs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+            let totalBudget = envs.reduce((s,e) => s + Number(e.budget), 0);
+            let globalBalance = totalBudget - totalExpenses; // Solde théorique basé sur les enveloppes
+            
+            document.getElementById('stat-incomes').innerText = totalIncomes.toFixed(2) + ' €';
+            document.getElementById('stat-expenses').innerText = totalExpenses.toFixed(2) + ' €';
+            document.getElementById('stat-total-budget').innerText = totalBudget.toFixed(2) + ' €';
+            document.getElementById('stat-balance').innerText = globalBalance.toFixed(2) + ' €';
+            
+            let globalPct = totalBudget ? Math.min(100, (totalExpenses/totalBudget)*100) : 0;
+            document.getElementById('global-progress').style.width = globalPct + '%';
+            document.getElementById('global-progress').className = `h-2 rounded-full transition-all ${globalPct>90 ? 'bg-red-500' : 'bg-gradient-to-r from-neonCyan to-neonPurple'}`;
 
-            document.getElementById('stat-balance').textContent = balance.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-            document.getElementById('stat-balance').className = `text-3xl font-black mt-2 ${balance >= 0 ? 'text-emerald-600' : 'text-neonPink'}`;
-            document.getElementById('stat-expenses').textContent = totalExpenses.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-            document.getElementById('stat-incomes').textContent = totalIncomes.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-
-            // Render Envelopes
-            const envContainer = document.getElementById('envelopes-container');
+            // Rendu Enveloppes
+            let envContainer = document.getElementById('envelopes-container');
             envContainer.innerHTML = '';
+            let chartLabels = [], chartData = [], chartColors = [];
 
-            const currentEnvs = db.envelopes.filter(e => e.wallet === currentView);
+            envs.forEach(env => {
+                let envTxs = txs.filter(t => t.envelopeId === env.id && t.type === 'expense');
+                let envSpent = envTxs.reduce((s,t) => s+t.amount, 0);
+                let envTransfersIn = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+                
+                let activeBudget = Number(env.budget) + envTransfersIn;
+                let remaining = activeBudget - envSpent;
+                let pct = activeBudget ? Math.min(100, (envSpent/activeBudget)*100) : 0;
+                let thres = env.alertThreshold || 80;
+                
+                let isOver = remaining < 0;
+                let colorCls = colorMap[env.color || 'pink'];
+                let bgCard = isOver ? 'bg-red-50 border-red-300 shadow-[0_0_15px_rgba(255,0,0,0.1)]' : 'bg-cardBg border-slate-200 hover:border-slate-300';
+                
+                if(envSpent > 0) { chartLabels.push(env.name); chartData.push(envSpent); chartColors.push(isOver ? '#ef4444' : '#0099ff'); }
 
-            if (currentEnvs.length === 0) {
-                envContainer.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-sm">Aucune enveloppe dans ce portefeuille. Créez-en une !</div>`;
-            } else {
-                currentEnvs.forEach(env => {
-                    // Calculate spent in this envelope
-                    let spent = 0;
-                    db.transactions.forEach(t => {
-                        if (t.envelopeId === env.id) {
-                            spent += t.amount;
-                        }
-                    });
-
-                    const percent = env.budget > 0 ? Math.min(Math.round((spent / env.budget) * 100), 100) : 0;
-                    const remaining = env.budget - spent;
-
-                    // Extract color parts
-                    const cardHtml = `
-                        <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl relative shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
-                            <div>
-                                <div class="flex justify-between items-start mb-3">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs ${env.color.split(' ')[2]}">
-                                            <i class="fa-solid ${env.type === 'savings' ? 'fa-piggy-bank' : 'fa-folder'}"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="font-bold text-slate-800 text-sm">${env.name}</h3>
-                                            <span class="text-[10px] uppercase font-bold text-slate-400">${env.type === 'savings' ? 'Épargne' : 'Budget'}</span>
-                                        </div>
-                                    </div>
-                                    <button onclick="deleteEnvelope('${env.id}')" class="text-slate-300 hover:text-neonPink transition-colors text-xs">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </div>
-                                <div class="flex justify-between items-baseline mb-2 text-xs">
-                                    <span class="text-slate-500 font-semibold">Dépensé : <strong class="text-slate-800">${spent.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</strong></span>
-                                    <span class="text-slate-400">Max: ${env.budget.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
-                                    <div class="h-full bg-gradient-to-r ${env.color.split(' ')[0]} ${env.color.split(' ')[1]} rounded-full transition-all duration-500" style="width: ${percent}%"></div>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
-                                <span class="text-slate-400">Restant</span>
-                                <span class="font-bold ${remaining >= 0 ? 'text-emerald-600' : 'text-neonPink'}">${remaining.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
+                envContainer.innerHTML += `
+                    <div class="${bgCard} border p-5 rounded-2xl relative env-card group transition-all">
+                        <div class="absolute top-4 right-4">
+                            <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
+                            <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-6 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
+                                <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
+                                <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
                             </div>
                         </div>
-                    `;
-                    envContainer.insertAdjacentHTML('beforeend', cardHtml);
-                });
-            }
-
-            // Render Transactions Table
-            const searchVal = document.getElementById('search-input').value.toLowerCase();
-            const txTable = document.getElementById('transactions-table');
-            txTable.innerHTML = '';
-
-            const filteredTxs = db.transactions.filter(t => {
-                const matchesView = t.wallet === currentView;
-                const matchesSearch = t.label.toLowerCase().includes(searchVal) || t.payer.toLowerCase().includes(searchVal);
-                return matchesView && matchesSearch;
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr ${colorCls} flex items-center justify-center text-white shadow-sm">
+                                <i class="fa-solid ${env.icon || 'fa-basket-shopping'}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-slate-800 flex items-center gap-2">${env.name} ${env.type==='savings'?'🏦':''} ${isOver?'<i class="fa-solid fa-triangle-exclamation text-red-500" title="Dépassement !"></i>':''}</h3>
+                                <p class="text-xs text-slate-500">${activeBudget.toFixed(2)} € prévus</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-end mb-2">
+                            <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${envSpent.toFixed(2)} €</div>
+                            <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${remaining > 0 ? 'Reste ' + remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(remaining).toFixed(2)+'€'}</div>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
+                            <div class="h-full rounded-full transition-all ${pct >= thres && !isOver ? 'bg-orange-400' : isOver ? 'bg-red-500' : 'bg-slate-800'}" style="width: ${pct}%"></div>
+                        </div>
+                        ${pct >= thres && !isOver ? `<p class="text-[10px] text-orange-500 mt-1 mt-1"><i class="fa-solid fa-bell"></i> Attention, budget presque atteint</p>` : ''}
+                    </div>
+                `;
             });
 
-            if (filteredTxs.length === 0) {
-                txTable.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-sm">Aucune opération trouvée.</td></tr>`;
-            } else {
-                filteredTxs.forEach(t => {
-                    let envName = '-';
-                    if (t.envelopeId) {
-                        const envObj = db.envelopes.find(e => e.id === t.envelopeId);
-                        if (envObj) envName = envObj.name;
-                    }
+            // Tableau Transactions
+            let tbody = document.getElementById('transactions-table');
+            tbody.innerHTML = txs.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+                let env = db.envelopes.find(e => e.id === t.envelopeId);
+                let isExp = t.type === 'expense';
+                let isTrans = t.type.startsWith('transfer');
+                let color = isExp ? 'text-slate-800' : 'text-neonPink';
+                if(isTrans) color = 'text-amber-600';
+                return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td class="p-3 text-slate-500">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
+                    <td class="p-3 font-medium">${t.label}</td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : (isTrans?'Transfert/Bilan':'-')}</span></td>
+                    <td class="p-3 text-right font-black ${color}">${isExp ? '-' : '+'}${t.amount.toFixed(2)} €</td>
+                </tr>`;
+            }).join('');
 
-                    const isIncome = t.type === 'income';
-                    const rowHtml = `
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="p-3 text-xs text-slate-500">${t.date}</td>
-                            <td class="p-3 font-semibold text-slate-800">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid ${isIncome ? 'fa-arrow-down text-emerald-500' : 'fa-arrow-up text-neonPink'} text-xs"></i>
-                                    ${t.label}
-                                </div>
-                            </td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${t.wallet === 'moi' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-cyan-50 text-cyan-600 border border-cyan-100'}">${t.wallet}</span></td>
-                            <td class="p-3 text-slate-600 text-xs">${envName}</td>
-                            <td class="p-3 text-slate-600 text-xs">${t.payer}</td>
-                            <td class="p-3 text-right font-black ${isIncome ? 'text-emerald-600' : 'text-slate-800'}">
-                                ${isIncome ? '+' : '-'}${t.amount.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                            </td>
-                            <td class="p-3 text-center">
-                                <button onclick="deleteTransaction('${t.id}')" class="text-slate-300 hover:text-neonPink transition-colors text-xs">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    txTable.insertAdjacentHTML('beforeend', rowHtml);
-                });
-            }
+            // Mise à jour Camembert
+            if(pieChartInstance) pieChartInstance.destroy();
+            const ctxPie = document.getElementById('expensePieChart').getContext('2d');
+            pieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
+            });
         }
 
-        // Initial setup on load
-        window.onload = function() {
-            switchView('moi');
-        };
+        // --- SOUMISSIONS ---
+        function updateEnvelopeOptions() {
+            let select = document.getElementById('exp-envelope');
+            select.innerHTML = db.envelopes.filter(e => e.wallet === document.getElementById('exp-wallet').value).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        }
+
+        function handleExpenseSubmit(e) {
+            e.preventDefault();
+            db.transactions.push({
+                id: Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
+                amount: Number(document.getElementById('exp-amount').value), envelopeId: document.getElementById('exp-envelope').value,
+                date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense'
+            });
+            closeModal('expenseModal'); saveDB();
+        }
+
+        function handleIncomeSubmit(e) {
+            e.preventDefault();
+            db.transactions.push({
+                id: Date.now().toString(), type: 'income', wallet: document.getElementById('inc-wallet').value,
+                amount: Number(document.getElementById('inc-amount').value), date: document.getElementById('inc-date').value, label: document.getElementById('inc-label').value
+            });
+            closeModal('incomeModal'); saveDB();
+        }
+
+        function handleEnvelopeSubmit(e) {
+            e.preventDefault();
+            let id = document.getElementById('env-id').value;
+            let envData = {
+                id: id || Date.now().toString(), name: document.getElementById('env-name').value,
+                wallet: document.getElementById('env-wallet').value, budget: Number(document.getElementById('env-budget').value),
+                alertThreshold: Number(document.getElementById('env-alert').value), type: document.getElementById('env-type').value,
+                color: document.getElementById('env-color').value, icon: document.getElementById('env-icon').value
+            };
+            if(id) { let idx = db.envelopes.findIndex(x => x.id === id); db.envelopes[idx] = envData; } 
+            else db.envelopes.push(envData);
+            closeModal('envelopeModal'); saveDB();
+        }
+
+        // --- HISTORIQUE GRAPHIQUE ---
+        function showHistory(envId) {
+            let env = db.envelopes.find(e => e.id === envId);
+            document.getElementById('hist-title').innerHTML = `<i class="fa-solid fa-chart-line text-${env.color}-500"></i> ${env.name}`;
+            
+            // Calculer les 6 derniers mois
+            let labels=[], budgets=[], spents=[];
+            let d = new Date(viewDate); d.setMonth(d.getMonth()-5);
+            for(let i=0; i<6; i++) {
+                let mK = getMonthKey(d);
+                labels.push(d.toLocaleDateString('fr-FR', {month:'short'}));
+                let txs = db.transactions.filter(t => t.envelopeId === envId && t.date.startsWith(mK));
+                spents.push(txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
+                budgets.push(env.budget + txs.filter(t=>t.type==='transfer_in').reduce((s,t)=>s+t.amount,0));
+                d.setMonth(d.getMonth()+1);
+            }
+
+            openModal('historyModal');
+            if(histChartInstance) histChartInstance.destroy();
+            histChartInstance = new Chart(document.getElementById('envHistoryChart').getContext('2d'), {
+                type: 'bar', data: { labels, datasets: [{label: 'Dépensé', data: spents, backgroundColor: '#ff007f'}, {label: 'Budget', data: budgets, backgroundColor: '#e2e8f0'}] },
+                options: { responsive:true, maintainAspectRatio:false, scales: {y: {beginAtZero:true}} }
+            });
+        }
+
+        // --- LE BILAN DU MOIS ---
+        function prepareBilan() {
+            let mKey = getMonthKey(viewDate);
+            let envs = db.envelopes.filter(e => e.wallet === currentView);
+            let txs = db.transactions.filter(t => t.wallet === currentView && t.date.startsWith(mKey));
+            let html = ''; activeBilanData = [];
+
+            envs.forEach(env => {
+                let spent = txs.filter(t => t.envelopeId === env.id && t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+                let transIn = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+                let remaining = (Number(env.budget) + transIn) - spent;
+                
+                if (remaining > 0 && env.type !== 'savings') {
+                    // Excédent -> Proposer Epargne
+                    html += `
+                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center">
+                        <div><h4 class="font-bold text-green-800">${env.name}</h4><p class="text-xs text-green-600">+ ${remaining.toFixed(2)} € non consommés</p></div>
+                        <label class="flex items-center gap-2 text-sm font-bold text-green-700 cursor-pointer">
+                            <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-green-600" checked> Basculer vers Épargne
+                        </label>
+                    </div>`;
+                    activeBilanData.push({id: env.id, type: 'to_savings', amount: remaining});
+                } else if (remaining < 0) {
+                    // Déficit -> Proposer renflouement
+                    let options = envs.filter(e => e.id !== env.id && e.type !== 'savings').map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+                    html += `
+                    <div class="bg-red-50 border border-red-200 p-4 rounded-xl space-y-2">
+                        <div class="flex justify-between">
+                            <div><h4 class="font-bold text-red-800">${env.name}</h4><p class="text-xs text-red-600">Dépassé de ${Math.abs(remaining).toFixed(2)} €</p></div>
+                        </div>
+                        <select id="bilan-cover-${env.id}" class="w-full text-sm p-2 rounded-lg border-red-300">
+                            <option value="">-- Choisir une enveloppe pour couvrir --</option>
+                            ${options}
+                        </select>
+                    </div>`;
+                    activeBilanData.push({id: env.id, type: 'cover_deficit', amount: Math.abs(remaining)});
+                }
+            });
+
+            if(!html) html = '<p class="text-center text-slate-500 font-bold py-4">Rien à signaler, le budget est parfaitement équilibré ce mois-ci !</p>';
+            document.getElementById('bilan-content').innerHTML = html;
+            openModal('bilanModal');
+        }
+
+        function executeBilan() {
+            let mKey = getMonthKey(viewDate);
+            let lastDay = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).toISOString().split('T')[0]; // Dernier jour du mois visé
+            
+            activeBilanData.forEach(item => {
+                if(item.type === 'to_savings' && document.getElementById(`bilan-save-${item.id}`).checked) {
+                    let sourceEnv = db.envelopes.find(e => e.id === item.id);
+                    // Trouve ou créer enveloppe epargne correspondante
+                    let saveEnv = db.envelopes.find(e => e.name === sourceEnv.name + " (Épargne)" && e.wallet === currentView);
+                    if(!saveEnv) {
+                        saveEnv = { id: 'sav-'+Date.now(), name: sourceEnv.name + " (Épargne)", wallet: currentView, budget: 0, type: 'savings', color: sourceEnv.color, icon: 'fa-piggy-bank' };
+                        db.envelopes.push(saveEnv);
+                    }
+                    // Retirer de la source
+                    db.transactions.push({ id: Date.now().toString()+'1', type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: sourceEnv.id, date: lastDay, label: 'Bilan: transfert vers épargne' });
+                    // Ajouter à l'épargne (comme un revenu interne)
+                    db.transactions.push({ id: Date.now().toString()+'2', type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: saveEnv.id, date: lastDay, label: 'Bilan: fonds reportés' });
+                }
+                if(item.type === 'cover_deficit') {
+                    let targetId = document.getElementById(`bilan-cover-${item.id}`).value;
+                    if(targetId) {
+                        db.transactions.push({ id: Date.now().toString()+'3', type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: targetId, date: lastDay, label: 'Bilan: couverture de découvert' });
+                        db.transactions.push({ id: Date.now().toString()+'4', type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: item.id, date: lastDay, label: 'Bilan: renflouement' });
+                    }
+                }
+            });
+            closeModal('bilanModal'); saveDB();
+        }
+
+        // INIT DÉMARRAGE
+        switchView('commun'); // Active la vue et appelle renderApp()
+
     </script>
 </body>
 </html>
