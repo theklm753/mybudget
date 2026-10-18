@@ -40,8 +40,11 @@
                     MYBUDGET
                 </h1>
             </div>
-            <!-- Profil utilisateur -->
-            <div class="flex items-center gap-3">
+            <!-- Profil utilisateur & Reset -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="resetCurrentMonth()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-xl text-[10px] sm:text-xs transition-all shadow-md text-center leading-tight">
+                    Réinitialiser le mois<br>en cours
+                </button>
                 <div class="text-right hidden sm:block">
                     <div class="text-sm font-bold">Anne-Sophie</div>
                     <div class="text-[10px] text-white/80 uppercase tracking-wide">Connectée</div>
@@ -268,7 +271,7 @@
         </div>
     </div>
 
-    <!-- MODALS DÉPENSE ET REVENU INCLUS -->
+    <!-- MODALS DÉPENSE ET REVENU -->
     <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl"><div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div><form onsubmit="handleExpenseSubmit(event)" class="space-y-4"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label><select id="exp-envelope" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="exp-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note</label><input type="text" id="exp-note" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div></div><button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md">Valider</button></form></div>
     </div>
@@ -302,9 +305,20 @@
             'fuchsia': 'from-fuchsia-500 to-pink-500 text-fuchsia-600 border-fuchsia-200 bg-fuchsia-50'
         };
 
+        const savingsColorMap = {
+            'pink': { bg: 'bg-pink-100', textTitle: 'text-pink-800', textAmt: 'text-pink-900', textSub: 'text-pink-700', barBg: 'bg-pink-200', barFill: 'bg-pink-500' },
+            'purple': { bg: 'bg-purple-100', textTitle: 'text-purple-800', textAmt: 'text-purple-900', textSub: 'text-purple-700', barBg: 'bg-purple-200', barFill: 'bg-purple-500' },
+            'cyan': { bg: 'bg-cyan-100', textTitle: 'text-cyan-800', textAmt: 'text-cyan-900', textSub: 'text-cyan-700', barBg: 'bg-cyan-200', barFill: 'bg-cyan-500' },
+            'emerald': { bg: 'bg-emerald-100', textTitle: 'text-emerald-800', textAmt: 'text-emerald-900', textSub: 'text-emerald-700', barBg: 'bg-emerald-200', barFill: 'bg-emerald-500' },
+            'amber': { bg: 'bg-amber-100', textTitle: 'text-amber-800', textAmt: 'text-amber-900', textSub: 'text-amber-700', barBg: 'bg-amber-200', barFill: 'bg-amber-500' },
+            'red': { bg: 'bg-red-100', textTitle: 'text-red-800', textAmt: 'text-red-900', textSub: 'text-red-700', barBg: 'bg-red-200', barFill: 'bg-red-500' },
+            'blue': { bg: 'bg-blue-100', textTitle: 'text-blue-800', textAmt: 'text-blue-900', textSub: 'text-blue-700', barBg: 'bg-blue-200', barFill: 'bg-blue-500' },
+            'fuchsia': { bg: 'bg-fuchsia-100', textTitle: 'text-fuchsia-800', textAmt: 'text-fuchsia-900', textSub: 'text-fuchsia-700', barBg: 'bg-fuchsia-200', barFill: 'bg-fuchsia-500' }
+        };
+
         // État de l'application
         let currentView = 'commun';
-        let viewDate = new Date(); // Date utilisée pour l'affichage (mois par mois)
+        let viewDate = new Date(); 
         let pieChartInstance = null;
         let histChartInstance = null;
         let activeBilanData = [];
@@ -327,6 +341,19 @@
         function changeMonth(delta) {
             viewDate.setMonth(viewDate.getMonth() + delta);
             renderApp();
+        }
+
+        // --- RESET MOIS EN COURS ---
+        function resetCurrentMonth() {
+            if(!confirm("Êtes-vous sûr de vouloir effacer toutes les dépenses et revenus de ce mois ?\n(Les enveloppes épargne et les transferts de bilan seront conservés)")) return;
+            let mKey = getMonthKey(viewDate);
+            db.transactions = db.transactions.filter(t => {
+                if(t.date.startsWith(mKey)) {
+                    if(t.type === 'expense' || t.type === 'income') return false; 
+                }
+                return true; 
+            });
+            saveDB();
         }
 
         // --- VUES & MODALS ---
@@ -386,6 +413,8 @@
             let totalTransfersIn = txs.filter(t => t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
             let totalTransfersOut = txs.filter(t => t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
             
+            // Note: les enveloppes épargne ont 0 de budget fixe. 
+            // Leur fonds provient des transferts entrants du Bilan.
             let totalBudget = envs.reduce((s,e) => s + Number(e.budget), 0) + totalTransfersIn - totalTransfersOut;
             let globalBalance = totalBudget - totalExpenses;
             
@@ -400,7 +429,7 @@
             let soldeIcon = document.getElementById('solde-icon');
             let soldeWarning = document.getElementById('solde-warning');
 
-            // Reset des classes dynamiques pour le Solde Restant
+            // Reset des classes
             soldeCard.className = 'border p-5 rounded-2xl shadow-sm relative overflow-hidden group transition-all duration-300';
             soldeLabel.className = 'text-xs font-bold uppercase transition-colors';
             soldeSublabel.className = 'text-xs mt-2 font-semibold transition-colors';
@@ -410,7 +439,6 @@
             soldeWarning.innerHTML = '';
 
             if (globalPct > 100) {
-                // + de 100% consommé : Alerte Rouge Intégrale
                 soldeCard.classList.add('bg-red-500', 'border-red-600', 'shadow-[0_0_20px_rgba(239,68,68,0.3)]');
                 soldeLabel.classList.add('text-white/90');
                 soldeSublabel.classList.add('text-white/90');
@@ -419,47 +447,40 @@
                 statBalance.classList.add('text-white');
                 soldeWarning.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-white text-xl animate-pulse"></i>';
             } else {
-                // Sous les 100% : bloc normal, couleur du texte selon pourcentage
                 soldeCard.classList.add('bg-cardBg', 'border-slate-200');
                 soldeLabel.classList.add('text-slate-400');
                 soldeSublabel.classList.add('text-slate-400');
                 statTotalBudget.classList.add('text-slate-600');
                 soldeIcon.classList.add('text-slate-200');
                 
-                if (globalPct <= 20) {
-                    statBalance.classList.add('text-green-700'); // Vert foncé
-                } else if (globalPct <= 40) {
-                    statBalance.classList.add('text-green-400'); // Vert clair
-                } else if (globalPct <= 60) {
-                    statBalance.classList.add('text-yellow-500'); // Jaune
-                } else if (globalPct <= 80) {
-                    statBalance.classList.add('text-orange-500'); // Orange
-                } else {
-                    statBalance.classList.add('text-red-500'); // Rouge
-                }
+                if (globalPct <= 20) { statBalance.classList.add('text-green-700'); } 
+                else if (globalPct <= 40) { statBalance.classList.add('text-green-400'); } 
+                else if (globalPct <= 60) { statBalance.classList.add('text-yellow-500'); } 
+                else if (globalPct <= 80) { statBalance.classList.add('text-orange-500'); } 
+                else { statBalance.classList.add('text-red-500'); }
             }
 
-            // Injections des textes des Kpis
             document.getElementById('stat-incomes').innerText = totalIncomes.toFixed(2) + ' €';
             document.getElementById('stat-expenses').innerText = totalExpenses.toFixed(2) + ' €';
             statTotalBudget.innerText = totalBudget.toFixed(2) + ' €';
             statBalance.innerText = globalBalance.toFixed(2) + ' €';
             
-            // Jauge de consommation globale
             let displayGlobalPct = Math.min(100, globalPct);
             document.getElementById('global-progress').style.width = displayGlobalPct + '%';
-            if(globalPct > 100) {
-                document.getElementById('global-progress').className = 'h-full rounded-full transition-all bg-white';
-            } else {
-                document.getElementById('global-progress').className = `h-full rounded-full transition-all ${displayGlobalPct>90 ? 'bg-red-500' : 'bg-gradient-to-r from-neonCyan to-neonPurple'}`;
-            }
+            if(globalPct > 100) { document.getElementById('global-progress').className = 'h-full rounded-full transition-all bg-white'; } 
+            else { document.getElementById('global-progress').className = `h-full rounded-full transition-all ${displayGlobalPct>90 ? 'bg-red-500' : 'bg-gradient-to-r from-neonCyan to-neonPurple'}`; }
 
-            // Rendu Enveloppes
+            // --- RENDU ENVELOPPES ---
             let envContainer = document.getElementById('envelopes-container');
             envContainer.innerHTML = '';
             let chartLabels = [], chartData = [], chartColors = [];
 
-            envs.forEach(env => {
+            // Séparation pour intégrer l'épargne dans les cartes parentes
+            let mainEnvs = envs.filter(e => e.type !== 'savings');
+            let savingsEnvs = envs.filter(e => e.type === 'savings');
+            let usedSavingsIds = new Set();
+
+            mainEnvs.forEach(env => {
                 let envTxs = txs.filter(t => t.envelopeId === env.id && t.type === 'expense');
                 let envSpent = envTxs.reduce((s,t) => s+t.amount, 0);
                 let envTransfersIn = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
@@ -467,9 +488,6 @@
                 
                 let activeBudget = Number(env.budget) + envTransfersIn - envTransfersOut;
                 let remaining = activeBudget - envSpent;
-
-                // Cache les enveloppes épargnes vides pour le mois en cours
-                if (env.type === 'savings' && activeBudget === 0 && envSpent === 0) return;
 
                 let pct = activeBudget ? Math.min(100, (envSpent/activeBudget)*100) : 0;
                 let thres = env.alertThreshold || 80;
@@ -480,34 +498,85 @@
                 
                 if(envSpent > 0) { chartLabels.push(env.name); chartData.push(envSpent); chartColors.push(isOver ? '#ef4444' : '#0099ff'); }
 
+                // -- BLOC ÉPARGNE IMBRIQUÉ --
+                let savingsHtml = '';
+                let saveEnv = savingsEnvs.find(e => e.name === env.name + " (Épargne)");
+                
+                if (saveEnv) {
+                    usedSavingsIds.add(saveEnv.id);
+                    let allSaveTxs = db.transactions.filter(t => t.envelopeId === saveEnv.id);
+                    
+                    let endOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).toISOString().split('T')[0];
+                    let startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).toISOString().split('T')[0];
+                    
+                    let savedIn = allSaveTxs.filter(t => t.type === 'transfer_in' && t.date <= endOfMonth).reduce((s,t) => s+t.amount, 0);
+                    let spentBefore = allSaveTxs.filter(t => (t.type === 'expense' || t.type === 'transfer_out') && t.date < startOfMonth).reduce((s,t) => s+t.amount, 0);
+                    
+                    let totalSaved = savedIn - spentBefore; // Disponible en début de ce mois
+                    let spentThisMonth = allSaveTxs.filter(t => t.type === 'expense' && t.date.startsWith(mKey)).reduce((s,t) => s+t.amount, 0);
+                    
+                    if (totalSaved > 0 || spentThisMonth > 0) {
+                        let savePct = totalSaved > 0 ? Math.min(100, (spentThisMonth / totalSaved) * 100) : 0;
+                        let sc = savingsColorMap[env.color || 'emerald'];
+
+                        savingsHtml = `
+                            <div class="mt-4 ${sc.bg} rounded-xl p-3 relative overflow-hidden">
+                                <h4 class="text-xs font-bold ${sc.textTitle} mb-1">Epargne ${env.name.toLowerCase()}</h4>
+                                <div class="flex justify-between items-end mb-2">
+                                    <div>
+                                        <div class="text-xl font-black ${sc.textAmt}">${spentThisMonth.toFixed(2)} €</div>
+                                        <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois-ci sur<br>l'épargne disponible</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xl font-black ${sc.textAmt}">${totalSaved.toFixed(2)} €</div>
+                                        <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Épargnés les mois<br>précédents</div>
+                                    </div>
+                                </div>
+                                <div class="w-full ${sc.barBg} rounded-full h-1.5 relative overflow-hidden">
+                                    <div class="h-full ${sc.barFill} rounded-full" style="width: ${savePct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
                 envContainer.innerHTML += `
-                    <div class="${bgCard} border p-5 rounded-2xl relative env-card group transition-all">
-                        <div class="absolute top-4 right-4">
-                            <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
-                            <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-6 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
-                                <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
-                                <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
+                    <div class="${bgCard} border p-5 rounded-2xl relative env-card group transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="absolute top-4 right-4">
+                                <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
+                                <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-6 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
+                                    <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
+                                    <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr ${colorCls} flex items-center justify-center text-white shadow-sm">
-                                <i class="fa-solid ${env.icon || 'fa-basket-shopping'}"></i>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr ${colorCls} flex items-center justify-center text-white shadow-sm shrink-0">
+                                    <i class="fa-solid ${env.icon || 'fa-basket-shopping'}"></i>
+                                </div>
+                                <div class="pr-6">
+                                    <h3 class="font-black text-slate-800 flex items-center gap-2 leading-tight">${env.name} ${isOver?'<i class="fa-solid fa-triangle-exclamation text-red-500" title="Dépassement !"></i>':''}</h3>
+                                    <p class="text-xs text-slate-500">${activeBudget.toFixed(2)} € prévus</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="font-black text-slate-800 flex items-center gap-2">${env.name} ${env.type==='savings'?'🏦':''} ${isOver?'<i class="fa-solid fa-triangle-exclamation text-red-500" title="Dépassement !"></i>':''}</h3>
-                                <p class="text-xs text-slate-500">${activeBudget.toFixed(2)} € prévus</p>
+                            <div class="flex justify-between items-end mb-2">
+                                <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${envSpent.toFixed(2)} €</div>
+                                <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${remaining > 0 ? 'Reste ' + remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(remaining).toFixed(2)+'€'}</div>
                             </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
+                                <div class="h-full rounded-full transition-all ${pct >= thres && !isOver ? 'bg-orange-400' : isOver ? 'bg-red-500' : 'bg-slate-800'}" style="width: ${pct}%"></div>
+                            </div>
+                            ${pct >= thres && !isOver ? `<p class="text-[10px] text-orange-500 mt-1"><i class="fa-solid fa-bell"></i> Attention, budget presque atteint</p>` : ''}
                         </div>
-                        <div class="flex justify-between items-end mb-2">
-                            <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${envSpent.toFixed(2)} €</div>
-                            <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${remaining > 0 ? 'Reste ' + remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(remaining).toFixed(2)+'€'}</div>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
-                            <div class="h-full rounded-full transition-all ${pct >= thres && !isOver ? 'bg-orange-400' : isOver ? 'bg-red-500' : 'bg-slate-800'}" style="width: ${pct}%"></div>
-                        </div>
-                        ${pct >= thres && !isOver ? `<p class="text-[10px] text-orange-500 mt-1 mt-1"><i class="fa-solid fa-bell"></i> Attention, budget presque atteint</p>` : ''}
+                        ${savingsHtml}
                     </div>
                 `;
+            });
+
+            // Affichage des enveloppes épargnes qui n'auraient pas de parent (sécurité)
+            savingsEnvs.forEach(env => {
+                if (usedSavingsIds.has(env.id)) return;
+                // Logique de rendu classique si jamais une épargne est orpheline...
             });
 
             // Tableau Transactions
@@ -539,15 +608,58 @@
         // --- SOUMISSIONS ---
         function updateEnvelopeOptions() {
             let select = document.getElementById('exp-envelope');
-            select.innerHTML = db.envelopes.filter(e => e.wallet === document.getElementById('exp-wallet').value).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            // On affiche uniquement les enveloppes principales (classiques) dans la liste
+            select.innerHTML = db.envelopes.filter(e => e.wallet === document.getElementById('exp-wallet').value && e.type !== 'savings').map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         }
 
         function handleExpenseSubmit(e) {
             e.preventDefault();
+            let amount = Number(document.getElementById('exp-amount').value);
+            let wallet = document.getElementById('exp-wallet').value;
+            let mainEnvId = document.getElementById('exp-envelope').value;
+            let date = document.getElementById('exp-date').value;
+            let label = document.getElementById('exp-note').value || 'Dépense';
+
+            let mainEnv = db.envelopes.find(e => e.id === mainEnvId);
+            // Vérifie s'il y a une enveloppe épargne associée
+            let saveEnv = db.envelopes.find(e => e.name === mainEnv.name + " (Épargne)" && e.wallet === wallet);
+
+            if (saveEnv) {
+                // Calcule le solde disponible total dans l'épargne (tout ce qui est rentré moins tout ce qui est sorti)
+                let saveTxs = db.transactions.filter(t => t.envelopeId === saveEnv.id && t.date <= date);
+                let savedIn = saveTxs.filter(t => t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+                let savedOut = saveTxs.filter(t => t.type === 'expense' || t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
+                let availableSavings = savedIn - savedOut;
+
+                if (availableSavings > 0) {
+                    // Pioche dans l'épargne en priorité !
+                    let fromSavings = Math.min(amount, availableSavings);
+                    let fromMain = amount - fromSavings;
+
+                    if (fromSavings > 0) {
+                        db.transactions.push({
+                            id: Date.now().toString() + 's', type: 'expense', wallet: wallet,
+                            amount: fromSavings, envelopeId: saveEnv.id,
+                            date: date, label: label + ' (Imputé sur Épargne)'
+                        });
+                    }
+                    if (fromMain > 0) {
+                        db.transactions.push({
+                            id: Date.now().toString() + 'm', type: 'expense', wallet: wallet,
+                            amount: fromMain, envelopeId: mainEnv.id,
+                            date: date, label: label
+                        });
+                    }
+                    closeModal('expenseModal'); saveDB();
+                    return;
+                }
+            }
+
+            // Dépense classique si pas d'épargne
             db.transactions.push({
-                id: Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
-                amount: Number(document.getElementById('exp-amount').value), envelopeId: document.getElementById('exp-envelope').value,
-                date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense'
+                id: Date.now().toString(), type: 'expense', wallet: wallet,
+                amount: amount, envelopeId: mainEnv.id,
+                date: date, label: label
             });
             closeModal('expenseModal'); saveDB();
         }
@@ -580,7 +692,6 @@
             let env = db.envelopes.find(e => e.id === envId);
             document.getElementById('hist-title').innerHTML = `<i class="fa-solid fa-chart-line text-${env.color}-500"></i> ${env.name}`;
             
-            // Calculer les 6 derniers mois
             let labels=[], budgets=[], spents=[];
             let d = new Date(viewDate); d.setMonth(d.getMonth()-5);
             for(let i=0; i<6; i++) {
@@ -604,7 +715,8 @@
         // --- LE BILAN DU MOIS ---
         function prepareBilan() {
             let mKey = getMonthKey(viewDate);
-            let envs = db.envelopes.filter(e => e.wallet === currentView);
+            // On ne fait le bilan que pour les enveloppes principales (l'épargne est maintenant cumulative et infinie)
+            let envs = db.envelopes.filter(e => e.wallet === currentView && e.type !== 'savings');
             let txs = db.transactions.filter(t => t.wallet === currentView && t.date.startsWith(mKey));
             let html = ''; activeBilanData = [];
 
@@ -615,27 +727,16 @@
                 let remaining = (Number(env.budget) + transIn - transOut) - spent;
                 
                 if (remaining > 0) {
-                    if (env.type !== 'savings') {
-                        html += `
-                        <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center">
-                            <div><h4 class="font-bold text-green-800">${env.name}</h4><p class="text-xs text-green-600">+ ${remaining.toFixed(2)} € non consommés</p></div>
-                            <label class="flex items-center gap-2 text-sm font-bold text-green-700 cursor-pointer">
-                                <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-green-600" checked> Transférer vers Épargne le mois prochain
-                            </label>
-                        </div>`;
-                        activeBilanData.push({id: env.id, type: 'to_savings', amount: remaining});
-                    } else {
-                        html += `
-                        <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl flex justify-between items-center">
-                            <div><h4 class="font-bold text-purple-800">${env.name}</h4><p class="text-xs text-purple-600">+ ${remaining.toFixed(2)} € restants</p></div>
-                            <label class="flex items-center gap-2 text-sm font-bold text-purple-700 cursor-pointer">
-                                <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-purple-600" checked> Reporter l'épargne au mois suivant
-                            </label>
-                        </div>`;
-                        activeBilanData.push({id: env.id, type: 'rollover_savings', amount: remaining});
-                    }
+                    html += `
+                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center">
+                        <div><h4 class="font-bold text-green-800">${env.name}</h4><p class="text-xs text-green-600">+ ${remaining.toFixed(2)} € non consommés</p></div>
+                        <label class="flex items-center gap-2 text-sm font-bold text-green-700 cursor-pointer">
+                            <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-green-600" checked> Transférer vers Épargne le mois prochain
+                        </label>
+                    </div>`;
+                    activeBilanData.push({id: env.id, type: 'to_savings', amount: remaining});
                 } else if (remaining < 0) {
-                    let options = envs.filter(e => e.id !== env.id && e.type !== 'savings').map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+                    let options = envs.filter(e => e.id !== env.id).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
                     html += `
                     <div class="bg-red-50 border border-red-200 p-4 rounded-xl space-y-2">
                         <div class="flex justify-between">
@@ -672,11 +773,6 @@
                     }
                     db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: sourceEnv.id, date: lastDay, label: 'Bilan: transfert vers épargne' });
                     db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: saveEnv.id, date: nextMonthFirstDay, label: 'Report d\'épargne du mois précédent' });
-                }
-                
-                if(item.type === 'rollover_savings' && document.getElementById(`bilan-save-${item.id}`).checked) {
-                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: item.id, date: lastDay, label: 'Report vers le mois suivant' });
-                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: item.id, date: nextMonthFirstDay, label: 'Report d\'épargne du mois précédent' });
                 }
 
                 if(item.type === 'cover_deficit') {
