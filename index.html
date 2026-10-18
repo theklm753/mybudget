@@ -300,7 +300,9 @@
         }
 
         // --- NAVIGATION MOIS ---
-        function getMonthKey(date) { return date.toISOString().substring(0,7); }
+        function getMonthKey(date) { 
+            return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+        }
         function changeMonth(delta) {
             viewDate.setMonth(viewDate.getMonth() + delta);
             renderApp();
@@ -357,11 +359,14 @@
             let envs = db.envelopes.filter(e => e.wallet === currentView);
             let txs = db.transactions.filter(t => t.wallet === currentView && t.date.startsWith(mKey));
             
-            // Calculs globaux
+            // Calculs globaux (ajustés pour intégrer les transferts qui sortent/entrent du mois)
             let totalIncomes = txs.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
             let totalExpenses = txs.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
-            let totalBudget = envs.reduce((s,e) => s + Number(e.budget), 0);
-            let globalBalance = totalBudget - totalExpenses; // Solde théorique basé sur les enveloppes
+            let totalTransfersIn = txs.filter(t => t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+            let totalTransfersOut = txs.filter(t => t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
+            
+            let totalBudget = envs.reduce((s,e) => s + Number(e.budget), 0) + totalTransfersIn - totalTransfersOut;
+            let globalBalance = totalBudget - totalExpenses;
             
             document.getElementById('stat-incomes').innerText = totalIncomes.toFixed(2) + ' €';
             document.getElementById('stat-expenses').innerText = totalExpenses.toFixed(2) + ' €';
@@ -381,9 +386,16 @@
                 let envTxs = txs.filter(t => t.envelopeId === env.id && t.type === 'expense');
                 let envSpent = envTxs.reduce((s,t) => s+t.amount, 0);
                 let envTransfersIn = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+                let envTransfersOut = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
                 
-                let activeBudget = Number(env.budget) + envTransfersIn;
+                // Le budget actif diminue si on en sort de l'argent (lors d'un bilan) et augmente si on en reçoit
+                let activeBudget = Number(env.budget) + envTransfersIn - envTransfersOut;
                 let remaining = activeBudget - envSpent;
+
+                // MAGIE DE L'EPARGNE: Si c'est une enveloppe épargne et qu'il n'y a eu aucun report pour ce mois (budget = 0) et aucune dépense, on la cache !
+                // Cela garantit qu'elle n'apparaît que le mois suivant après un bilan.
+                if (env.type === 'savings' && activeBudget === 0 && envSpent === 0) return;
+
                 let pct = activeBudget ? Math.min(100, (envSpent/activeBudget)*100) : 0;
                 let thres = env.alertThreshold || 80;
                 
@@ -452,6 +464,7 @@
         // --- SOUMISSIONS ---
         function updateEnvelopeOptions() {
             let select = document.getElementById('exp-envelope');
+            // N'afficher que les enveloppes (classiques ou épargne) qui sont actives ce mois-ci
             select.innerHTML = db.envelopes.filter(e => e.wallet === document.getElementById('exp-wallet').value).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
         }
 
@@ -501,14 +514,15 @@
                 labels.push(d.toLocaleDateString('fr-FR', {month:'short'}));
                 let txs = db.transactions.filter(t => t.envelopeId === envId && t.date.startsWith(mK));
                 spents.push(txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
-                budgets.push(env.budget + txs.filter(t=>t.type==='transfer_in').reduce((s,t)=>s+t.amount,0));
+                let activeB = env.budget + txs.filter(t=>t.type==='transfer_in').reduce((s,t)=>s+t.amount,0) - txs.filter(t=>t.type==='transfer_out').reduce((s,t)=>s+t.amount,0);
+                budgets.push(activeB);
                 d.setMonth(d.getMonth()+1);
             }
 
             openModal('historyModal');
             if(histChartInstance) histChartInstance.destroy();
             histChartInstance = new Chart(document.getElementById('envHistoryChart').getContext('2d'), {
-                type: 'bar', data: { labels, datasets: [{label: 'Dépensé', data: spents, backgroundColor: '#ff007f'}, {label: 'Budget', data: budgets, backgroundColor: '#e2e8f0'}] },
+                type: 'bar', data: { labels, datasets: [{label: 'Dépensé', data: spents, backgroundColor: '#ff007f'}, {label: 'Budget Actif', data: budgets, backgroundColor: '#e2e8f0'}] },
                 options: { responsive:true, maintainAspectRatio:false, scales: {y: {beginAtZero:true}} }
             });
         }
@@ -523,18 +537,31 @@
             envs.forEach(env => {
                 let spent = txs.filter(t => t.envelopeId === env.id && t.type === 'expense').reduce((s,t) => s+t.amount, 0);
                 let transIn = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
-                let remaining = (Number(env.budget) + transIn) - spent;
+                let transOut = txs.filter(t => t.envelopeId === env.id && t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
+                let remaining = (Number(env.budget) + transIn - transOut) - spent;
                 
-                if (remaining > 0 && env.type !== 'savings') {
-                    // Excédent -> Proposer Epargne
-                    html += `
-                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center">
-                        <div><h4 class="font-bold text-green-800">${env.name}</h4><p class="text-xs text-green-600">+ ${remaining.toFixed(2)} € non consommés</p></div>
-                        <label class="flex items-center gap-2 text-sm font-bold text-green-700 cursor-pointer">
-                            <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-green-600" checked> Basculer vers Épargne
-                        </label>
-                    </div>`;
-                    activeBilanData.push({id: env.id, type: 'to_savings', amount: remaining});
+                if (remaining > 0) {
+                    if (env.type !== 'savings') {
+                        // Excédent Enveloppe Classique -> Proposer création/transfert Epargne
+                        html += `
+                        <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex justify-between items-center">
+                            <div><h4 class="font-bold text-green-800">${env.name}</h4><p class="text-xs text-green-600">+ ${remaining.toFixed(2)} € non consommés</p></div>
+                            <label class="flex items-center gap-2 text-sm font-bold text-green-700 cursor-pointer">
+                                <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-green-600" checked> Transférer vers Épargne le mois prochain
+                            </label>
+                        </div>`;
+                        activeBilanData.push({id: env.id, type: 'to_savings', amount: remaining});
+                    } else {
+                        // Excédent Enveloppe Epargne -> Proposer de faire suivre l'épargne sur le mois suivant
+                        html += `
+                        <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl flex justify-between items-center">
+                            <div><h4 class="font-bold text-purple-800">${env.name}</h4><p class="text-xs text-purple-600">+ ${remaining.toFixed(2)} € restants</p></div>
+                            <label class="flex items-center gap-2 text-sm font-bold text-purple-700 cursor-pointer">
+                                <input type="checkbox" id="bilan-save-${env.id}" class="w-5 h-5 accent-purple-600" checked> Reporter l'épargne au mois suivant
+                            </label>
+                        </div>`;
+                        activeBilanData.push({id: env.id, type: 'rollover_savings', amount: remaining});
+                    }
                 } else if (remaining < 0) {
                     // Déficit -> Proposer renflouement
                     let options = envs.filter(e => e.id !== env.id && e.type !== 'savings').map(e => `<option value="${e.id}">${e.name}</option>`).join('');
@@ -558,28 +585,39 @@
         }
 
         function executeBilan() {
-            let mKey = getMonthKey(viewDate);
-            let lastDay = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).toISOString().split('T')[0]; // Dernier jour du mois visé
+            // Création propre et locale des dates pour éviter les bugs de fuseau horaire
+            let currentLastDayObj = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+            let lastDay = currentLastDayObj.getFullYear() + '-' + String(currentLastDayObj.getMonth()+1).padStart(2,'0') + '-' + String(currentLastDayObj.getDate()).padStart(2,'0');
             
+            let nextFirstDayObj = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+            let nextMonthFirstDay = nextFirstDayObj.getFullYear() + '-' + String(nextFirstDayObj.getMonth()+1).padStart(2,'0') + '-' + String(nextFirstDayObj.getDate()).padStart(2,'0');
+
             activeBilanData.forEach(item => {
                 if(item.type === 'to_savings' && document.getElementById(`bilan-save-${item.id}`).checked) {
                     let sourceEnv = db.envelopes.find(e => e.id === item.id);
                     // Trouve ou créer enveloppe epargne correspondante
                     let saveEnv = db.envelopes.find(e => e.name === sourceEnv.name + " (Épargne)" && e.wallet === currentView);
                     if(!saveEnv) {
-                        saveEnv = { id: 'sav-'+Date.now(), name: sourceEnv.name + " (Épargne)", wallet: currentView, budget: 0, type: 'savings', color: sourceEnv.color, icon: 'fa-piggy-bank' };
+                        saveEnv = { id: 'sav-'+Date.now()+Math.random(), name: sourceEnv.name + " (Épargne)", wallet: currentView, budget: 0, type: 'savings', color: sourceEnv.color, icon: 'fa-piggy-bank' };
                         db.envelopes.push(saveEnv);
                     }
-                    // Retirer de la source
-                    db.transactions.push({ id: Date.now().toString()+'1', type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: sourceEnv.id, date: lastDay, label: 'Bilan: transfert vers épargne' });
-                    // Ajouter à l'épargne (comme un revenu interne)
-                    db.transactions.push({ id: Date.now().toString()+'2', type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: saveEnv.id, date: lastDay, label: 'Bilan: fonds reportés' });
+                    // Retirer de la source à la fin du mois
+                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: sourceEnv.id, date: lastDay, label: 'Bilan: transfert vers épargne' });
+                    // Ajouter à l'épargne AU DÉBUT DU MOIS SUIVANT
+                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: saveEnv.id, date: nextMonthFirstDay, label: 'Report d\'épargne du mois précédent' });
                 }
+                
+                if(item.type === 'rollover_savings' && document.getElementById(`bilan-save-${item.id}`).checked) {
+                    // Retirer du mois en cours, pousser sur le mois suivant pour conserver le solde
+                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: item.id, date: lastDay, label: 'Report vers le mois suivant' });
+                    db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: item.id, date: nextMonthFirstDay, label: 'Report d\'épargne du mois précédent' });
+                }
+
                 if(item.type === 'cover_deficit') {
                     let targetId = document.getElementById(`bilan-cover-${item.id}`).value;
                     if(targetId) {
-                        db.transactions.push({ id: Date.now().toString()+'3', type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: targetId, date: lastDay, label: 'Bilan: couverture de découvert' });
-                        db.transactions.push({ id: Date.now().toString()+'4', type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: item.id, date: lastDay, label: 'Bilan: renflouement' });
+                        db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_out', wallet: currentView, amount: item.amount, envelopeId: targetId, date: lastDay, label: 'Bilan: couverture de découvert' });
+                        db.transactions.push({ id: Date.now().toString()+Math.random(), type: 'transfer_in', wallet: currentView, amount: item.amount, envelopeId: item.id, date: lastDay, label: 'Bilan: renflouement' });
                     }
                 }
             });
@@ -587,7 +625,7 @@
         }
 
         // INIT DÉMARRAGE
-        switchView('commun'); // Active la vue et appelle renderApp()
+        switchView('commun');
 
     </script>
 </body>
