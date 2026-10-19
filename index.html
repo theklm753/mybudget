@@ -148,9 +148,15 @@
 
         <!-- Historique des Dépenses -->
         <div class="bg-cardBg border border-slate-200 rounded-3xl p-6 shadow-sm">
-            <h2 class="text-xl font-black flex items-center gap-2 text-slate-800 mb-4">
-                <i class="fa-solid fa-clock-rotate-left text-neonCyan"></i> Historique
-            </h2>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h2 class="text-xl font-black flex items-center gap-2 text-slate-800">
+                    <i class="fa-solid fa-clock-rotate-left text-neonCyan"></i> Historique
+                </h2>
+                <!-- Filtre d'historique -->
+                <select id="history-filter" onchange="renderApp()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:border-neonCyan shadow-sm">
+                    <option value="all">Toutes les enveloppes</option>
+                </select>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
@@ -306,7 +312,10 @@
             <div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Saisir une dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div>
             <form onsubmit="handleExpenseSubmit(event)" class="space-y-4">
                 <input type="hidden" id="exp-id">
-                <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
+                    <input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold">
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateExpenseEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div>
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label><select id="exp-envelope" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"></select></div>
@@ -321,6 +330,10 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="exp-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div>
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note</label><input type="text" id="exp-note" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div>
+                </div>
+                <div class="flex items-center gap-2 mt-1 mb-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input type="checkbox" id="exp-recurring" class="w-4 h-4 text-neonPink rounded border-slate-300 focus:ring-neonPink">
+                    <label for="exp-recurring" class="text-xs font-bold uppercase text-slate-600 cursor-pointer">Dépense récurrente (mensuelle)</label>
                 </div>
                 <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md">Valider la dépense</button>
             </form>
@@ -418,7 +431,7 @@
         }
 
         function resetCurrentMonth() {
-            if(!confirm("Réinitialiser les dépenses et revenus de ce mois ?")) return;
+            if(!confirm("Réinitialiser les dépenses et revenus de ce mois ? (Ne supprimera pas les dépenses récurrentes d'origine)")) return;
             let mKey = getMonthKey(viewDate);
             db.transactions = db.transactions.filter(t => {
                 if(t.date.startsWith(mKey) && (t.type === 'expense' || t.type === 'income' || t.type === 'global_saving' || t.type.includes('transfer'))) return false; 
@@ -427,8 +440,9 @@
             saveDB();
         }
 
-        function deleteTransaction(id) {
-            if(!confirm("Supprimer cette transaction ?")) return;
+        function deleteTransaction(id, isVirtual = false) {
+            let msg = isVirtual ? "Cette dépense est récurrente. Voulez-vous la supprimer définitivement (pour tous les mois) ?" : "Supprimer cette transaction ?";
+            if(!confirm(msg)) return;
             db.transactions = db.transactions.filter(t => t.id !== id);
             saveDB();
         }
@@ -446,6 +460,7 @@
                 document.getElementById('exp-source').value = t.source || 'main';
                 document.getElementById('exp-date').value = t.date;
                 document.getElementById('exp-note').value = t.label;
+                document.getElementById('exp-recurring').checked = t.isRecurring || false;
                 document.getElementById('expenseModal').classList.remove('hidden');
             } else if (t.type === 'income') {
                 document.getElementById('inc-id').value = t.id;
@@ -505,6 +520,7 @@
                 document.getElementById('exp-wallet').value = currentView; 
                 document.getElementById('exp-amount').value = '';
                 document.getElementById('exp-note').value = '';
+                document.getElementById('exp-recurring').checked = false;
                 updateExpenseEnvelopeOptions(); 
                 document.getElementById('exp-date').valueAsDate = new Date(); 
             }
@@ -534,7 +550,26 @@
             document.getElementById('current-month-display').innerText = viewDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
             
             let envs = db.envelopes.filter(e => e.wallet === currentView);
-            let txsAll = db.transactions.filter(t => t.wallet === currentView);
+
+            // Génération des transactions étendues (incluant la projection des dépenses récurrentes)
+            let expandedTxs = [];
+            db.transactions.filter(t => t.wallet === currentView).forEach(t => {
+                expandedTxs.push(t);
+                if (t.isRecurring && t.type === 'expense') {
+                    let [y, m, d] = t.date.split('-').map(Number);
+                    let loopDate = new Date(y, m, 1);
+                    let targetDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+                    
+                    while (loopDate <= targetDate) {
+                        let currentMK = getMonthKey(loopDate);
+                        let dStr = String(d).padStart(2, '0');
+                        expandedTxs.push({...t, date: `${currentMK}-${dStr}`, isVirtual: true});
+                        loopDate.setMonth(loopDate.getMonth() + 1);
+                    }
+                }
+            });
+
+            let txsAll = expandedTxs;
             let txsThisMonth = txsAll.filter(t => t.date.startsWith(mKey));
             
             let totalIncomes = txsThisMonth.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
@@ -551,6 +586,16 @@
             envContainer.innerHTML = '';
 
             let totalEnvelopeSavings = 0;
+
+            // Mise à jour de la liste déroulante des filtres (Historique)
+            let filterSelect = document.getElementById('history-filter');
+            let currentFilter = filterSelect.value;
+            let filterHtml = '<option value="all">Toutes les enveloppes</option>';
+            envs.forEach(e => {
+                filterHtml += `<option value="${e.id}" ${currentFilter === e.id ? 'selected' : ''}>${e.name}</option>`;
+            });
+            filterHtml += `<option value="global" ${currentFilter === 'global' ? 'selected' : ''}>Épargne Globale</option>`;
+            filterSelect.innerHTML = filterHtml;
 
             envs.forEach(env => {
                 let monthsDiff = getMonthsDiff(db.settings.startMonth, viewDate);
@@ -593,6 +638,11 @@
                 let isOver = main_remaining < 0;
                 let colorCls = colorMap[env.color || 'pink'];
                 let bgCard = isOver ? 'bg-red-50 border-red-300 shadow-[0_0_15px_rgba(255,0,0,0.1)]' : 'bg-cardBg border-slate-200 hover:border-slate-300';
+
+                // NOUVEAU: Couleurs dynamiques selon le pourcentage dépensé
+                let spentColor = 'text-emerald-500';
+                if (main_pct >= 100) spentColor = 'text-red-600';
+                else if (main_pct >= 80) spentColor = 'text-orange-500';
 
                 let savingsHtml = '';
                 if (epargne_available > 0 || curr_expenses_ep > 0) {
@@ -640,7 +690,7 @@
                                 </div>
                             </div>
                             <div class="flex justify-between items-end mb-2">
-                                <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${curr_expenses_main.toFixed(2)} €</div>
+                                <div class="text-2xl font-black ${spentColor}">${curr_expenses_main.toFixed(2)} €</div>
                                 <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${main_remaining >= 0 ? 'Reste ' + main_remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(main_remaining).toFixed(2)+'€'}</div>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
@@ -710,8 +760,24 @@
             if(globalPct > 100) { document.getElementById('global-progress').className = 'h-full rounded-full transition-all bg-white'; } 
             else { document.getElementById('global-progress').className = `h-full rounded-full transition-all ${displayGlobalPct>90 ? 'bg-red-500' : 'bg-gradient-to-r from-neonCyan to-neonPurple'}`; }
 
+            // Filtre et affichage de l'historique
             let tbody = document.getElementById('transactions-table');
-            tbody.innerHTML = txsThisMonth.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+            let filteredTxs = txsThisMonth;
+            
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'global') {
+                    filteredTxs = filteredTxs.filter(t => t.type.includes('global'));
+                } else {
+                    filteredTxs = filteredTxs.filter(t => t.envelopeId === currentFilter);
+                }
+            }
+
+            // Tri par date décroissante, puis par ID décroissant (ordre de saisie pour une même date)
+            tbody.innerHTML = filteredTxs.sort((a, b) => {
+                let dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                return b.id.localeCompare(a.id);
+            }).map(t => {
                 let env = db.envelopes.find(e => e.id === t.envelopeId);
                 let isOut = t.type === 'expense' || t.type.includes('out');
                 let isTrans = t.type.includes('transfer');
@@ -727,19 +793,21 @@
                     sourceBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">Transfert</span>';
                 }
 
+                let recBadge = t.isRecurring ? '<i class="fa-solid fa-arrows-rotate text-[10px] text-purple-500 ml-2" title="Dépense récurrente"></i>' : '';
+
                 let editBtn = (t.type === 'expense' || t.type === 'income') 
                     ? `<button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors p-2 rounded-lg" title="Modifier"><i class="fa-solid fa-pen"></i></button>`
                     : '';
 
                 return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
                     <td class="p-3 text-slate-500">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
-                    <td class="p-3 font-medium">${t.label}</td>
+                    <td class="p-3 font-medium">${t.label} ${recBadge}</td>
                     <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : (t.type.includes('global') ? 'Épargne Globale' : 'Général')}</span></td>
                     <td class="p-3">${sourceBadge}</td>
                     <td class="p-3 text-right font-black ${color}">${isOut ? '-' : '+'}${t.amount.toFixed(2)} €</td>
                     <td class="p-3 text-center whitespace-nowrap">
                         ${editBtn}
-                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="deleteTransaction('${t.id}', ${t.isVirtual ? 'true' : 'false'})" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             }).join('');
@@ -822,7 +890,8 @@
                 id: id || Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
                 amount: Number(document.getElementById('exp-amount').value), envelopeId: document.getElementById('exp-envelope').value,
                 source: document.getElementById('exp-source').value,
-                date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense'
+                date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense',
+                isRecurring: document.getElementById('exp-recurring').checked
             };
             if(id) { let idx = db.transactions.findIndex(x => x.id === id); db.transactions[idx] = txData; } 
             else db.transactions.push(txData);
