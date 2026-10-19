@@ -114,7 +114,7 @@
             <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group flex flex-col justify-between">
                 <div>
                     <div class="flex justify-between items-start">
-                        <span class="text-xs font-bold uppercase text-slate-400">Épargne Globale Non Allouée</span>
+                        <span class="text-xs font-bold uppercase text-slate-400">Épargne Globale</span>
                         <i class="fa-solid fa-piggy-bank text-purple-200 text-2xl"></i>
                     </div>
                     <div class="text-3xl font-black mt-2 text-purple-600" id="stat-global-savings">0,00 €</div>
@@ -210,7 +210,7 @@
     <div id="transferModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-amber-300 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer (Mois en cours)</h3>
+                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer</h3>
                 <button onclick="closeModal('transferModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form onsubmit="handleTransferSubmit(event)" class="space-y-4">
@@ -400,10 +400,12 @@
         function getMonthKey(date) { 
             return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
         }
+        
         function changeMonth(delta) {
             viewDate.setMonth(viewDate.getMonth() + delta);
             renderApp();
         }
+        
         function getMonthsDiff(startStr, targetDate) {
             if(!startStr) return 0;
             let [sYear, sMonth] = startStr.split('-').map(Number);
@@ -417,7 +419,7 @@
             if(!confirm("Réinitialiser les dépenses et revenus de ce mois ?")) return;
             let mKey = getMonthKey(viewDate);
             db.transactions = db.transactions.filter(t => {
-                if(t.date.startsWith(mKey) && (t.type === 'expense' || t.type === 'income' || t.type === 'global_saving')) return false; 
+                if(t.date.startsWith(mKey) && (t.type === 'expense' || t.type === 'income' || t.type === 'global_saving' || t.type.includes('transfer'))) return false; 
                 return true; 
             });
             saveDB();
@@ -470,11 +472,14 @@
             if (id === 'incomeModal') { document.getElementById('inc-wallet').value = currentView; document.getElementById('inc-date').valueAsDate = new Date(); }
             if (id === 'transferModal') { updateTransferOptions(); document.getElementById('trans-date').valueAsDate = new Date(); }
         }
+        
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
         function toggleMenu(id) {
             document.querySelectorAll('.env-menu').forEach(el => { if(el.id !== 'menu-'+id) el.classList.add('hidden'); });
             document.getElementById('menu-'+id).classList.toggle('hidden');
         }
+        
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.env-card')) document.querySelectorAll('.env-menu').forEach(el => el.classList.add('hidden'));
         });
@@ -507,6 +512,7 @@
                 let past_months_budget = monthsDiff * env.budget;
                 let startOfCurrentMonth = mKey + '-01';
                 
+                // Calcul de l'épargne d'enveloppe
                 let past_expenses_main = txsAll.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main' && t.date >= db.settings.startMonth + '-01' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 let past_transfers_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 let past_transfers_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
@@ -574,7 +580,6 @@
                                 <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
                                 <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-8 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
                                     <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
-                                    <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 mb-4 pr-16">
@@ -602,6 +607,8 @@
 
             let totalCombinedSavings = globalSavingsPool + totalEnvelopeSavings;
             let savingsPct = totalCombinedSavings > 0 ? (globalSavingsPool / totalCombinedSavings) * 100 : 100;
+            if (totalCombinedSavings === 0 && globalSavingsPool === 0) savingsPct = 0;
+            
             document.getElementById('stat-global-savings').innerText = globalSavingsPool.toFixed(2) + ' €';
             document.getElementById('stat-savings-pct').innerText = savingsPct.toFixed(0) + '%';
 
@@ -667,14 +674,16 @@
                 let sourceBadge = '-';
                 if (t.type === 'expense') {
                     sourceBadge = t.source === 'epargne' ? '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Épargne</span>' : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Budget Mois</span>';
-                } else if (t.type === 'global_saving') {
+                } else if (t.type.includes('global_saving')) {
                     sourceBadge = '<span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold">Épargne Globale</span>';
+                } else if (isTrans) {
+                    sourceBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">Transfert</span>';
                 }
 
                 return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
                     <td class="p-3 text-slate-500">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
                     <td class="p-3 font-medium">${t.label}</td>
-                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : 'Général'}</span></td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : (t.type.includes('global') ? 'Épargne Globale' : 'Général')}</span></td>
                     <td class="p-3">${sourceBadge}</td>
                     <td class="p-3 text-right font-black ${color}">${isOut ? '-' : '+'}${t.amount.toFixed(2)} €</td>
                     <td class="p-3 text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button></td>
@@ -689,7 +698,8 @@
 
         function updateTransferOptions() {
             let envs = db.envelopes.filter(e => e.wallet === currentView);
-            let html = '<optgroup label="Budget du Mois">';
+            let html = '<option value="global_global" class="font-bold text-purple-600">Épargne Globale (Non Allouée)</option>';
+            html += '<optgroup label="Budget du Mois">';
             envs.forEach(e => html += `<option value="main_${e.id}">${e.name}</option>`);
             html += '</optgroup><optgroup label="Épargne de l\'enveloppe">';
             envs.forEach(e => html += `<option value="epargne_${e.id}">Épargne : ${e.name}</option>`);
@@ -727,18 +737,25 @@
             let [fromType, fromId] = from.split('_');
             let [toType, toId] = to.split('_');
 
+            let typeOut = fromType === 'global' ? 'global_saving_out' : (fromType === 'main' ? 'transfer_out' : 'transfer_out_epargne');
+            let typeIn = toType === 'global' ? 'global_saving_in' : (toType === 'main' ? 'transfer_in' : 'transfer_in_epargne');
+
             db.transactions.push({
                 id: Date.now().toString() + '1',
-                type: fromType === 'main' ? 'transfer_out' : 'transfer_out_epargne',
-                wallet: currentView, amount: amount, envelopeId: fromId, date: date,
-                label: `Transfert interne vers ${toType}`
+                type: typeOut,
+                wallet: currentView, amount: amount, 
+                envelopeId: fromType === 'global' ? null : fromId, 
+                date: date,
+                label: `Transfert vers ${toType === 'global' ? 'Épargne Globale' : (toType === 'main' ? 'Budget' : 'Épargne')}`
             });
 
             db.transactions.push({
                 id: Date.now().toString() + '2',
-                type: toType === 'main' ? 'transfer_in' : 'transfer_in_epargne',
-                wallet: currentView, amount: amount, envelopeId: toId, date: date,
-                label: `Transfert interne depuis ${fromType}`
+                type: typeIn,
+                wallet: currentView, amount: amount, 
+                envelopeId: toType === 'global' ? null : toId, 
+                date: date,
+                label: `Transfert depuis ${fromType === 'global' ? 'Épargne Globale' : (fromType === 'main' ? 'Budget' : 'Épargne')}`
             });
 
             closeModal('transferModal'); saveDB();
@@ -776,25 +793,6 @@
             if(id) { let idx = db.envelopes.findIndex(x => x.id === id); db.envelopes[idx] = envData; } 
             else db.envelopes.push(envData);
             closeModal('envelopeModal'); saveDB();
-        }
-
-        function showHistory(envId) {
-            let env = db.envelopes.find(e => e.id === envId);
-            document.getElementById('hist-title').innerHTML = `<i class="fa-solid fa-chart-line text-${env.color}-500"></i> ${env.name}`;
-            
-            let labels=[], budgets=[], spents=[];
-            let d = new Date(viewDate); d.setMonth(d.getMonth()-5);
-            for(let i=0; i<6; i++) {
-                let mK = getMonthKey(d);
-                labels.push(d.toLocaleDateString('fr-FR', {month:'short'}));
-                let txs = db.transactions.filter(t => t.envelopeId === envId && t.date.startsWith(mK));
-                spents.push(txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
-                let activeB = env.budget + txs.filter(t=>t.type==='transfer_in').reduce((s,t)=>s+t.amount,0) - txs.filter(t=>t.type==='transfer_out').reduce((s,t)=>s+t.amount,0);
-                budgets.push(activeB);
-                d.setMonth(d.getMonth()+1);
-            }
-
-            openModal('historyModal');
         }
 
         switchView('commun');
