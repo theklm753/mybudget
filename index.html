@@ -90,7 +90,7 @@
                     </div>
                 </div>
                 <div class="text-3xl font-black mt-2 transition-colors duration-300" id="stat-balance">0,00 €</div>
-                <div id="solde-sublabel" class="text-xs text-slate-400 mt-2 font-semibold transition-colors">Budget global <span id="stat-total-budget" class="text-slate-600 transition-colors">0€</span></div>
+                <div id="solde-sublabel" class="text-xs text-slate-400 mt-2 font-semibold transition-colors">Revenus du mois : <span id="stat-total-budget" class="text-slate-600 transition-colors">0€</span></div>
                 <div class="w-full bg-slate-100/50 rounded-full h-2 mt-3 overflow-hidden">
                     <div id="global-progress" class="h-full rounded-full transition-all" style="width: 0%"></div>
                 </div>
@@ -118,7 +118,7 @@
                         <i class="fa-solid fa-piggy-bank text-purple-200 text-2xl"></i>
                     </div>
                     <div class="text-3xl font-black mt-2 text-purple-600" id="stat-global-savings">0,00 €</div>
-                    <div class="text-xs text-purple-400 mt-1 font-semibold">Soit <span id="stat-savings-pct">0%</span> de l'épargne libre</div>
+                    <div class="text-xs text-purple-400 mt-1 font-semibold">Dont <span id="stat-savings-pct">0,00 €</span> non alloués</div>
                 </div>
                 <button onclick="openModal('addGlobalSavingsModal')" class="mt-3 w-full bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus"></i> Ajouter de l'épargne</button>
             </div>
@@ -525,12 +525,14 @@
                 let ep_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 
                 let epargne_available = epargne_base + ep_in - ep_out;
-                totalEnvelopeSavings += epargne_available;
 
                 let curr_expenses_main = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main').reduce((s,t) => s+t.amount, 0);
                 let curr_expenses_ep = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'epargne').reduce((s,t) => s+t.amount, 0);
                 let total_env_spent = curr_expenses_main + curr_expenses_ep;
                 totalExpensesThisMonth += total_env_spent;
+
+                let epargne_restante = epargne_available - curr_expenses_ep;
+                totalEnvelopeSavings += epargne_restante;
 
                 let curr_transfers_in = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
                 let curr_transfers_out = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
@@ -558,10 +560,10 @@
                             <div class="flex justify-between items-end mb-2">
                                 <div>
                                     <div class="text-xl font-black ${sc.textAmt}">${curr_expenses_ep.toFixed(2)} €</div>
-                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois sur épargne</div>
+                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois</div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-xl font-black ${sc.textAmt}">${epargne_available.toFixed(2)} €</div>
+                                    <div class="text-xl font-black ${sc.textAmt}">${epargne_restante.toFixed(2)} €</div>
                                     <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Disponible</div>
                                 </div>
                             </div>
@@ -605,15 +607,14 @@
                 `;
             });
 
+            // L'Épargne globale agrège la somme des épargnes dispo des enveloppes ET l'épargne non allouée
             let totalCombinedSavings = globalSavingsPool + totalEnvelopeSavings;
-            let savingsPct = totalCombinedSavings > 0 ? (globalSavingsPool / totalCombinedSavings) * 100 : 100;
-            if (totalCombinedSavings === 0 && globalSavingsPool === 0) savingsPct = 0;
-            
-            document.getElementById('stat-global-savings').innerText = globalSavingsPool.toFixed(2) + ' €';
-            document.getElementById('stat-savings-pct').innerText = savingsPct.toFixed(0) + '%';
+            document.getElementById('stat-global-savings').innerText = totalCombinedSavings.toFixed(2) + ' €';
+            document.getElementById('stat-savings-pct').innerText = globalSavingsPool.toFixed(2) + ' €';
 
-            let global_balance = global_main_budget - global_spent_main;
-            let globalPct = global_main_budget ? (global_spent_main / global_main_budget) * 100 : 0;
+            // Le solde global se base maintenant sur les revenus moins les dépenses totales
+            let global_balance = totalIncomes - totalExpensesThisMonth;
+            let globalPct = totalIncomes ? (totalExpensesThisMonth / totalIncomes) * 100 : (totalExpensesThisMonth > 0 ? 101 : 0);
             
             let soldeCard = document.getElementById('solde-card');
             let statBalance = document.getElementById('stat-balance');
@@ -655,7 +656,7 @@
 
             document.getElementById('stat-incomes').innerText = totalIncomes.toFixed(2) + ' €';
             document.getElementById('stat-expenses').innerText = totalExpensesThisMonth.toFixed(2) + ' €';
-            statTotalBudget.innerText = global_main_budget.toFixed(2) + ' €';
+            statTotalBudget.innerText = totalIncomes.toFixed(2) + ' €';
             statBalance.innerText = global_balance.toFixed(2) + ' €';
             
             let displayGlobalPct = Math.min(100, globalPct);
