@@ -21,6 +21,8 @@
     </script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chargement des données externes -->
+    <script src="data.js"></script>
 </head>
 <body class="bg-lightBg text-slate-800 font-sans min-h-screen selection:bg-neonPink selection:text-white pb-20">
 
@@ -108,15 +110,15 @@
                 <button onclick="openModal('incomeModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonPink font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-money-bill-trend-up"></i> Saisir Revenu</button>
             </div>
 
-            <!-- Épargne Globale (Somme toutes épargnes + non allouée) -->
+            <!-- Épargne Globale Non Allouée -->
             <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group flex flex-col justify-between">
                 <div>
                     <div class="flex justify-between items-start">
-                        <span class="text-xs font-bold uppercase text-slate-400">Épargne Globale</span>
+                        <span class="text-xs font-bold uppercase text-slate-400">Épargne Globale Non Allouée</span>
                         <i class="fa-solid fa-piggy-bank text-purple-200 text-2xl"></i>
                     </div>
                     <div class="text-3xl font-black mt-2 text-purple-600" id="stat-global-savings">0,00 €</div>
-                    <div class="text-xs text-purple-400 mt-1 font-semibold">Dont <span id="stat-unallocated-savings" class="font-bold text-purple-500">0,00 €</span> non alloués</div>
+                    <div class="text-xs text-purple-400 mt-1 font-semibold">Soit <span id="stat-savings-pct">0%</span> de l'épargne libre</div>
                 </div>
                 <button onclick="openModal('addGlobalSavingsModal')" class="mt-3 w-full bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus"></i> Ajouter de l'épargne</button>
             </div>
@@ -162,14 +164,13 @@
         </div>
     </main>
 
-    <!-- MODAL : Ajouter épargne globale (non allouée) -->
+    <!-- MODAL : Ajouter épargne globale -->
     <div id="addGlobalSavingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-purple-300 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-purple-600 flex items-center gap-2"><i class="fa-solid fa-piggy-bank"></i> Alimenter l'épargne</h3>
+                <h3 class="text-lg font-black text-purple-600 flex items-center gap-2"><i class="fa-solid fa-piggy-bank"></i> Alimenter l'épargne globale</h3>
                 <button onclick="closeModal('addGlobalSavingsModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-500 mb-3">L'argent ajouté ici ira dans la section "Non alloués". Vous pourrez le transférer vers une enveloppe plus tard.</p>
             <form onsubmit="handleGlobalSavingsSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
@@ -209,7 +210,7 @@
     <div id="transferModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-amber-300 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer</h3>
+                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer (Mois en cours)</h3>
                 <button onclick="closeModal('transferModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form onsubmit="handleTransferSubmit(event)" class="space-y-4">
@@ -356,7 +357,7 @@
             transactions: []
         };
 
-        let db = JSON.parse(localStorage.getItem('my_budget_db')) || defaultFamilyData;
+        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || defaultFamilyData;
         if (!db.settings) db.settings = { startMonth: '2026-09' };
         if (!db.envelopes || db.envelopes.length === 0) db.envelopes = defaultFamilyData.envelopes;
 
@@ -386,8 +387,13 @@
         let viewDate = new Date(); 
 
         function saveDB() {
-            // Uniquement la sauvegarde dans le navigateur : ultra-rapide et ne bloque plus GitHub Pages
             localStorage.setItem('my_budget_db', JSON.stringify(db));
+            const dataStr = "let db = " + JSON.stringify(db, null, 4) + ";";
+            const blob = new Blob([dataStr], { type: "text/javascript" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "data.js";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
             renderApp();
         }
 
@@ -483,10 +489,9 @@
             
             let totalIncomes = txsThisMonth.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
             
-            // Calcul Épargne "Non allouée"
             let totalGlobalSavingsIns = txsAll.filter(t => t.type === 'global_saving' || t.type === 'global_saving_in').reduce((s,t) => s+t.amount, 0);
             let totalGlobalSavingsOuts = txsAll.filter(t => t.type === 'global_saving_out').reduce((s,t) => s+t.amount, 0);
-            let unallocatedSavingsPool = totalGlobalSavingsIns - totalGlobalSavingsOuts;
+            let globalSavingsPool = totalGlobalSavingsIns - totalGlobalSavingsOuts;
 
             let global_main_budget = 0;
             let global_spent_main = 0;
@@ -514,7 +519,7 @@
                 let ep_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 
                 let epargne_available = epargne_base + ep_in - ep_out;
-                totalEnvelopeSavings += epargne_available; // Ajout à la somme des épargnes
+                totalEnvelopeSavings += epargne_available;
 
                 let curr_expenses_main = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main').reduce((s,t) => s+t.amount, 0);
                 let curr_expenses_ep = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'epargne').reduce((s,t) => s+t.amount, 0);
@@ -569,6 +574,7 @@
                                 <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
                                 <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-8 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
                                     <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
+                                    <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 mb-4 pr-16">
@@ -594,12 +600,11 @@
                 `;
             });
 
-            // Affichage de l'Épargne Globale (Somme complète = toutes enveloppes + pot non alloué)
-            let totalCombinedSavings = unallocatedSavingsPool + totalEnvelopeSavings;
-            document.getElementById('stat-global-savings').innerText = totalCombinedSavings.toFixed(2) + ' €';
-            document.getElementById('stat-unallocated-savings').innerText = unallocatedSavingsPool.toFixed(2) + ' €';
+            let totalCombinedSavings = globalSavingsPool + totalEnvelopeSavings;
+            let savingsPct = totalCombinedSavings > 0 ? (globalSavingsPool / totalCombinedSavings) * 100 : 100;
+            document.getElementById('stat-global-savings').innerText = globalSavingsPool.toFixed(2) + ' €';
+            document.getElementById('stat-savings-pct').innerText = savingsPct.toFixed(0) + '%';
 
-            // Solde global (strictement calculé sur les budgets du mois en cours)
             let global_balance = global_main_budget - global_spent_main;
             let globalPct = global_main_budget ? (global_spent_main / global_main_budget) * 100 : 0;
             
@@ -655,15 +660,15 @@
             tbody.innerHTML = txsThisMonth.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
                 let env = db.envelopes.find(e => e.id === t.envelopeId);
                 let isOut = t.type === 'expense' || t.type.includes('out');
-                let isTrans = t.type.includes('transfer') || t.type.includes('global_saving_out');
+                let isTrans = t.type.includes('transfer');
                 let color = isOut ? 'text-slate-800' : 'text-neonPink';
                 if(isTrans) color = 'text-amber-600';
                 
                 let sourceBadge = '-';
                 if (t.type === 'expense') {
                     sourceBadge = t.source === 'epargne' ? '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Épargne</span>' : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Budget Mois</span>';
-                } else if (t.type === 'global_saving' || t.type === 'global_saving_in' || t.type === 'global_saving_out') {
-                    sourceBadge = '<span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold">Pot Non Alloué</span>';
+                } else if (t.type === 'global_saving') {
+                    sourceBadge = '<span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold">Épargne Globale</span>';
                 }
 
                 return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
@@ -686,9 +691,8 @@
             let envs = db.envelopes.filter(e => e.wallet === currentView);
             let html = '<optgroup label="Budget du Mois">';
             envs.forEach(e => html += `<option value="main_${e.id}">${e.name}</option>`);
-            html += '</optgroup><optgroup label="Épargne">';
+            html += '</optgroup><optgroup label="Épargne de l\'enveloppe">';
             envs.forEach(e => html += `<option value="epargne_${e.id}">Épargne : ${e.name}</option>`);
-            html += `<option value="global_unallocated">Épargne non allouée (Pot)</option>`;
             html += '</optgroup>';
             document.getElementById('trans-from').innerHTML = html;
             document.getElementById('trans-to').innerHTML = html;
@@ -720,41 +724,22 @@
 
             if (from === to) { alert("Source et destination identiques."); return; }
 
-            let fromType, fromId, toType, toId;
+            let [fromType, fromId] = from.split('_');
+            let [toType, toId] = to.split('_');
 
-            // Enregistrement de la sortie d'argent
-            if (from === 'global_unallocated') {
-                db.transactions.push({
-                    id: Date.now().toString() + '1',
-                    type: 'global_saving_out', wallet: currentView, amount: amount, date: date,
-                    label: `Transfert vers ${document.getElementById('trans-to').options[document.getElementById('trans-to').selectedIndex].text}`
-                });
-            } else {
-                [fromType, fromId] = from.split('_');
-                db.transactions.push({
-                    id: Date.now().toString() + '1',
-                    type: fromType === 'main' ? 'transfer_out' : 'transfer_out_epargne',
-                    wallet: currentView, amount: amount, envelopeId: fromId, date: date,
-                    label: `Transfert interne vers destination`
-                });
-            }
+            db.transactions.push({
+                id: Date.now().toString() + '1',
+                type: fromType === 'main' ? 'transfer_out' : 'transfer_out_epargne',
+                wallet: currentView, amount: amount, envelopeId: fromId, date: date,
+                label: `Transfert interne vers ${toType}`
+            });
 
-            // Enregistrement de l'entrée d'argent
-            if (to === 'global_unallocated') {
-                db.transactions.push({
-                    id: Date.now().toString() + '2',
-                    type: 'global_saving_in', wallet: currentView, amount: amount, date: date,
-                    label: `Transfert depuis ${document.getElementById('trans-from').options[document.getElementById('trans-from').selectedIndex].text}`
-                });
-            } else {
-                [toType, toId] = to.split('_');
-                db.transactions.push({
-                    id: Date.now().toString() + '2',
-                    type: toType === 'main' ? 'transfer_in' : 'transfer_in_epargne',
-                    wallet: currentView, amount: amount, envelopeId: toId, date: date,
-                    label: `Transfert interne depuis la source`
-                });
-            }
+            db.transactions.push({
+                id: Date.now().toString() + '2',
+                type: toType === 'main' ? 'transfer_in' : 'transfer_in_epargne',
+                wallet: currentView, amount: amount, envelopeId: toId, date: date,
+                label: `Transfert interne depuis ${fromType}`
+            });
 
             closeModal('transferModal'); saveDB();
         }
@@ -793,9 +778,24 @@
             closeModal('envelopeModal'); saveDB();
         }
 
-        let db = JSON.parse(localStorage.getItem('my_budget_db')) || defaultFamilyData;
-        if (!db.settings) db.settings = { startMonth: '2026-09' };
-        if (!db.envelopes || db.envelopes.length === 0) db.envelopes = defaultFamilyData.envelopes;
+        function showHistory(envId) {
+            let env = db.envelopes.find(e => e.id === envId);
+            document.getElementById('hist-title').innerHTML = `<i class="fa-solid fa-chart-line text-${env.color}-500"></i> ${env.name}`;
+            
+            let labels=[], budgets=[], spents=[];
+            let d = new Date(viewDate); d.setMonth(d.getMonth()-5);
+            for(let i=0; i<6; i++) {
+                let mK = getMonthKey(d);
+                labels.push(d.toLocaleDateString('fr-FR', {month:'short'}));
+                let txs = db.transactions.filter(t => t.envelopeId === envId && t.date.startsWith(mK));
+                spents.push(txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0));
+                let activeB = env.budget + txs.filter(t=>t.type==='transfer_in').reduce((s,t)=>s+t.amount,0) - txs.filter(t=>t.type==='transfer_out').reduce((s,t)=>s+t.amount,0);
+                budgets.push(activeB);
+                d.setMonth(d.getMonth()+1);
+            }
+
+            openModal('historyModal');
+        }
 
         switchView('commun');
     </script>
