@@ -21,7 +21,7 @@
     </script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js pour les graphiques -->
+    <!-- Chart.js pour l'historique -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chargement des données externes -->
     <script src="data.js"></script>
@@ -49,7 +49,6 @@
                     <div class="text-sm font-bold">Anne-Sophie</div>
                     <div class="text-[10px] text-white/80 uppercase tracking-wide">Connectée</div>
                 </div>
-                <!-- Icône paramètre (cliquable) -->
                 <div onclick="openModal('settingsModal')" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30 shadow-inner cursor-pointer hover:bg-white/40 transition-colors" title="Paramètres du compte">
                     <i class="fa-solid fa-user text-white"></i>
                 </div>
@@ -80,50 +79,50 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Dashboard Widgets & Graphique -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <!-- Dashboard Widgets : Solde, Dépenses, Revenus, Épargne Globale Non Allouée -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            <!-- Colonne Kpis (3 colonnes) -->
-            <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                
-                <!-- Solde (Bloc Dynamique) -->
-                <div id="solde-card" class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden group transition-all duration-300">
-                    <div class="flex justify-between items-start">
-                        <span id="solde-label" class="text-xs font-bold uppercase text-slate-400 transition-colors">Solde Restant</span>
-                        <div class="flex items-center gap-2">
-                            <span id="solde-warning"></span>
-                            <i id="solde-icon" class="fa-solid fa-scale-balanced text-slate-200 text-2xl transition-colors"></i>
-                        </div>
-                    </div>
-                    <div class="text-3xl font-black mt-2 transition-colors duration-300" id="stat-balance">0,00 €</div>
-                    <div id="solde-sublabel" class="text-xs text-slate-400 mt-2 font-semibold transition-colors">Budget global <span id="stat-total-budget" class="text-slate-600 transition-colors">0€</span></div>
-                    <!-- Jauge globale -->
-                    <div class="w-full bg-slate-100/50 rounded-full h-2 mt-3 overflow-hidden">
-                        <div id="global-progress" class="h-full rounded-full transition-all" style="width: 0%"></div>
+            <!-- Solde (Bloc Dynamique) -->
+            <div id="solde-card" class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden group transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <span id="solde-label" class="text-xs font-bold uppercase text-slate-400 transition-colors">Solde Restant</span>
+                    <div class="flex items-center gap-2">
+                        <span id="solde-warning"></span>
+                        <i id="solde-icon" class="fa-solid fa-scale-balanced text-slate-200 text-2xl transition-colors"></i>
                     </div>
                 </div>
-
-                <!-- Dépenses -->
-                <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
-                    <span class="text-xs font-bold uppercase text-slate-400">Dépenses du mois</span>
-                    <div class="text-3xl font-black mt-2 text-neonCyan" id="stat-expenses">0,00 €</div>
-                    <button onclick="openModal('expenseModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonCyan font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus-circle"></i> Saisir Dépense</button>
-                </div>
-
-                <!-- Revenus -->
-                <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
-                    <span class="text-xs font-bold uppercase text-slate-400">Revenus du Mois</span>
-                    <div class="text-3xl font-black mt-2 text-neonPink" id="stat-incomes">0,00 €</div>
-                    <button onclick="openModal('incomeModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonPink font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-money-bill-trend-up"></i> Saisir Revenu</button>
+                <div class="text-3xl font-black mt-2 transition-colors duration-300" id="stat-balance">0,00 €</div>
+                <div id="solde-sublabel" class="text-xs text-slate-400 mt-2 font-semibold transition-colors">Budget global <span id="stat-total-budget" class="text-slate-600 transition-colors">0€</span></div>
+                <div class="w-full bg-slate-100/50 rounded-full h-2 mt-3 overflow-hidden">
+                    <div id="global-progress" class="h-full rounded-full transition-all" style="width: 0%"></div>
                 </div>
             </div>
 
-            <!-- Colonne Graphique Camembert -->
-            <div class="bg-cardBg border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center">
-                <span class="text-xs font-bold uppercase text-slate-400 mb-2 w-full text-left">Répartition</span>
-                <div class="w-full h-32 relative">
-                    <canvas id="expensePieChart"></canvas>
+            <!-- Dépenses -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
+                <span class="text-xs font-bold uppercase text-slate-400">Dépenses du mois</span>
+                <div class="text-3xl font-black mt-2 text-neonCyan" id="stat-expenses">0,00 €</div>
+                <button onclick="openModal('expenseModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonCyan font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus-circle"></i> Saisir Dépense</button>
+            </div>
+
+            <!-- Revenus -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group">
+                <span class="text-xs font-bold uppercase text-slate-400">Revenus du Mois</span>
+                <div class="text-3xl font-black mt-2 text-neonPink" id="stat-incomes">0,00 €</div>
+                <button onclick="openModal('incomeModal')" class="mt-3 w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-neonPink font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-money-bill-trend-up"></i> Saisir Revenu</button>
+            </div>
+
+            <!-- Épargne Globale Non Allouée -->
+            <div class="bg-cardBg border border-slate-200 p-5 rounded-2xl shadow-sm relative group flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold uppercase text-slate-400">Épargne Globale Non Allouée</span>
+                        <i class="fa-solid fa-piggy-bank text-purple-200 text-2xl"></i>
+                    </div>
+                    <div class="text-3xl font-black mt-2 text-purple-600" id="stat-global-savings">0,00 €</div>
+                    <div class="text-xs text-purple-400 mt-1 font-semibold">Soit <span id="stat-savings-pct">0%</span> de l'épargne libre</div>
                 </div>
+                <button onclick="openModal('addGlobalSavingsModal')" class="mt-3 w-full bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold py-2 rounded-xl text-xs transition-all"><i class="fa-solid fa-plus"></i> Ajouter de l'épargne</button>
             </div>
         </div>
 
@@ -136,7 +135,6 @@
                     </h2>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
-                    <!-- Bouton Transférer à la place du Bilan -->
                     <button onclick="openModal('transferModal')" class="flex-1 bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 font-bold px-4 py-2 rounded-xl transition-all text-sm flex justify-center items-center gap-2">
                         <i class="fa-solid fa-exchange-alt"></i> Transférer
                     </button>
@@ -161,7 +159,7 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
-                            <th class="p-3">Date</th><th class="p-3">Libellé</th><th class="p-3">Enveloppe</th><th class="p-3 text-right">Montant</th><th class="p-3 text-center">Action</th>
+                            <th class="p-3">Date</th><th class="p-3">Libellé</th><th class="p-3">Enveloppe</th><th class="p-3">Source</th><th class="p-3 text-right">Montant</th><th class="p-3 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody id="transactions-table" class="divide-y divide-slate-100"></tbody>
@@ -169,6 +167,31 @@
             </div>
         </div>
     </main>
+
+    <!-- MODAL : Ajouter de l'épargne globale non allouée -->
+    <div id="addGlobalSavingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-purple-300 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-purple-600 flex items-center gap-2"><i class="fa-solid fa-piggy-bank"></i> Alimenter l'épargne globale</h3>
+                <button onclick="closeModal('addGlobalSavingsModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleGlobalSavingsSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label>
+                    <input type="number" step="0.01" id="GS-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold focus:border-purple-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label>
+                    <input type="date" id="GS-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm focus:border-purple-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé / Source</label>
+                    <input type="text" id="GS-label" placeholder="Ex: Prime, Virement épargne..." required class="w-full bg-slate-50 border rounded-xl px-4 py-2 text-sm focus:border-purple-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-md transition-all">Ajouter au pot d'épargne</button>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL : Paramètres du compte -->
     <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -180,21 +203,21 @@
             <form onsubmit="handleSettingsSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Mois de début d'historique</label>
-                    <p class="text-[10px] text-slate-400 mb-2">Définit le point de départ pour calculer l'épargne automatique reportée de mois en mois.</p>
                     <input type="month" id="set-start-month" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-md transition-all">Enregistrer les paramètres</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-md transition-all">Enregistrer</button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL : Transfert -->
+    <!-- MODAL : Transfert (Budget ou Épargne d'une enveloppe vers une autre) -->
     <div id="transferModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-amber-300 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer de l'argent</h3>
+                <h3 class="text-lg font-black text-amber-600 flex items-center gap-2"><i class="fa-solid fa-exchange-alt"></i> Transférer (Mois en cours)</h3>
                 <button onclick="closeModal('transferModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
+            <p class="text-xs text-slate-500 mb-3">Permet de rééquilibrer le mois en cours sans modifier les budgets permanents des mois futurs.</p>
             <form onsubmit="handleTransferSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Depuis</label>
@@ -271,9 +294,6 @@
                             <option value="fa-heart-pulse">❤️ Santé</option>
                             <option value="fa-shirt">👕 Vêtements</option>
                             <option value="fa-hammer">🔨 Bricolage</option>
-                            <option value="fa-palette">🎨 Matériel Art</option>
-                            <option value="fa-book">📚 Édition</option>
-                            <option value="fa-laptop">💻 Digital/Web</option>
                             <option value="fa-plane">✈️ Vacances</option>
                             <option value="fa-piggy-bank">🐷 Épargne</option>
                             <option value="fa-ellipsis">🔹 Autre</option>
@@ -298,28 +318,67 @@
         </div>
     </div>
 
-    <!-- MODALS DÉPENSE ET REVENU -->
+    <!-- MODAL : Saisir Dépense -->
     <div id="expenseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl"><div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div><form onsubmit="handleExpenseSubmit(event)" class="space-y-4"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateExpenseEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label><select id="exp-envelope" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"></select></div></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="exp-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note</label><input type="text" id="exp-note" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div></div><button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md">Valider</button></form></div>
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl">
+            <div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Saisir une dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+            <form onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+                <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateExpenseEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div>
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Enveloppe</label><select id="exp-envelope" required class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"></select></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Imputer sur :</label>
+                    <select id="exp-source" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm font-bold text-purple-700">
+                        <option value="main">Budget du mois de l'enveloppe</option>
+                        <option value="epargne">Épargne de l'enveloppe</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="exp-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Note</label><input type="text" id="exp-note" class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-neonPurple text-white font-bold py-3 rounded-xl shadow-md">Valider la dépense</button>
+            </form>
+        </div>
     </div>
+
+    <!-- MODAL : Saisir Revenu -->
     <div id="incomeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl"><div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-money-bill-trend-up"></i> Revenu</h3><button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div><form onsubmit="handleIncomeSubmit(event)" class="space-y-4"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="inc-wallet" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="inc-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div></div><div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé</label><input type="text" id="inc-label" required class="w-full bg-slate-50 border rounded-xl px-4 py-2 text-sm"></div><button type="submit" class="w-full bg-gradient-to-r from-neonPink to-pink-600 text-white font-bold py-3 rounded-xl shadow-md">Valider</button></form></div>
+        <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl">
+            <div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-money-bill-trend-up"></i> Revenu</h3><button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+            <form onsubmit="handleIncomeSubmit(event)" class="space-y-4">
+                <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="inc-wallet" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div>
+                    <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Date</label><input type="date" id="inc-date" required class="w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm"></div>
+                </div>
+                <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Libellé</label><input type="text" id="inc-label" required class="w-full bg-slate-50 border rounded-xl px-4 py-2 text-sm"></div>
+                <button type="submit" class="w-full bg-gradient-to-r from-neonPink to-pink-600 text-white font-bold py-3 rounded-xl shadow-md">Valider</button>
+            </form>
+        </div>
     </div>
 
     <!-- LOGIQUE JAVASCRIPT -->
     <script>
-        // INIT DATA
-        const fallbackData = {
-            settings: { startMonth: '2026-09' }, // Historique démarre en Sept 2026 par défaut
+        // INIT DATA avec enveloppes familiales par défaut si le fichier data.js est vide ou sans enveloppes
+        const defaultFamilyData = {
+            settings: { startMonth: '2026-09' },
             envelopes: [
-                { id: '1', name: 'Courses Bébé & Maison', wallet: 'commun', budget: 500, color: 'emerald', icon: 'fa-baby', alertThreshold: 80 },
-                { id: '2', name: 'Shopping & Perso', wallet: 'moi', budget: 150, color: 'pink', icon: 'fa-shirt', alertThreshold: 80 },
-                { id: '3', name: 'Édition (SOFI) & Impression', wallet: 'pro', budget: 300, color: 'purple', icon: 'fa-book', alertThreshold: 90 }
+                { id: 'f1', name: 'Courses & Alimentation', wallet: 'commun', budget: 450, color: 'emerald', icon: 'fa-basket-shopping', alertThreshold: 80 },
+                { id: 'f2', name: 'Logement & Charges', wallet: 'commun', budget: 800, color: 'blue', icon: 'fa-house', alertThreshold: 90 },
+                { id: 'f3', name: 'Factures & Abonnements', wallet: 'commun', budget: 150, color: 'purple', icon: 'fa-bolt', alertThreshold: 80 },
+                { id: 'f4', name: 'Bébé & Enfants', wallet: 'commun', budget: 200, color: 'pink', icon: 'fa-baby', alertThreshold: 80 },
+                { id: 'f5', name: 'Loisirs & Sorties', wallet: 'commun', budget: 150, color: 'amber', icon: 'fa-utensils', alertThreshold: 80 },
+                { id: 'f6', name: 'Transport & Carburant', wallet: 'commun', budget: 150, color: 'cyan', icon: 'fa-car', alertThreshold: 80 }
             ],
             transactions: []
         };
-        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || fallbackData;
+
+        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || defaultFamilyData;
         if (!db.settings) db.settings = { startMonth: '2026-09' };
+        if (!db.envelopes || db.envelopes.length === 0) db.envelopes = defaultFamilyData.envelopes;
 
         // Configuration Couleurs
         const colorMap = {
@@ -347,7 +406,6 @@
         // État de l'application
         let currentView = 'commun';
         let viewDate = new Date(); 
-        let pieChartInstance = null;
         let histChartInstance = null;
 
         function saveDB() {
@@ -375,14 +433,14 @@
             let vYear = targetDate.getFullYear();
             let vMonth = targetDate.getMonth() + 1;
             let diff = (vYear - sYear) * 12 + (vMonth - sMonth);
-            return diff > 0 ? diff : 0; // 0 si targetDate est avant startStr
+            return diff > 0 ? diff : 0;
         }
 
         function resetCurrentMonth() {
-            if(!confirm("Êtes-vous sûr de vouloir effacer toutes les dépenses et revenus de ce mois ?\n(L'épargne automatique et les transferts seront recalculés)")) return;
+            if(!confirm("Réinitialiser les dépenses et revenus de ce mois ?")) return;
             let mKey = getMonthKey(viewDate);
             db.transactions = db.transactions.filter(t => {
-                if(t.date.startsWith(mKey) && (t.type === 'expense' || t.type === 'income')) return false; 
+                if(t.date.startsWith(mKey) && (t.type === 'expense' || t.type === 'income' || t.type === 'global_saving')) return false; 
                 return true; 
             });
             saveDB();
@@ -409,6 +467,11 @@
             document.getElementById(id).classList.remove('hidden');
             if (id === 'settingsModal') {
                 document.getElementById('set-start-month').value = db.settings.startMonth;
+            }
+            if (id === 'addGlobalSavingsModal') {
+                document.getElementById('GS-date').valueAsDate = new Date();
+                document.getElementById('GS-amount').value = '';
+                document.getElementById('GS-label').value = '';
             }
             if(id === 'envelopeModal') {
                 document.getElementById('env-id').value = envId || '';
@@ -451,80 +514,78 @@
             
             let totalIncomes = txsThisMonth.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
             
+            // Calcul Épargne Globale non allouée (tous les apports globaux moins les affectations ou retraits)
+            let totalGlobalSavingsIns = txsAll.filter(t => t.type === 'global_saving' || t.type === 'global_saving_in').reduce((s,t) => s+t.amount, 0);
+            let totalGlobalSavingsOuts = txsAll.filter(t => t.type === 'global_saving_out').reduce((s,t) => s+t.amount, 0);
+            let globalSavingsPool = totalGlobalSavingsIns - totalGlobalSavingsOuts;
+
             let global_main_budget = 0;
             let global_spent_main = 0;
-            let totalExpensesThisMonth = 0; // Toutes les dépenses du mois (y compris celles qui tapent dans l'épargne)
+            let totalExpensesThisMonth = 0;
 
             let envContainer = document.getElementById('envelopes-container');
             envContainer.innerHTML = '';
-            let chartLabels = [], chartData = [], chartColors = [];
 
-            // Calcul pour chaque enveloppe
+            let totalEnvelopeSavings = 0;
+
             envs.forEach(env => {
-                // 1. Calcul de l'Épargne Initial (Report automatique des mois précédents)
+                // Épargne calculée de l'enveloppe
                 let monthsDiff = getMonthsDiff(db.settings.startMonth, viewDate);
                 let past_months_budget = monthsDiff * env.budget;
-                
                 let startOfCurrentMonth = mKey + '-01';
                 
-                let past_expenses = txsAll.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.date >= db.settings.startMonth + '-01' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
-                let past_main_transfers_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
-                let past_main_transfers_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
+                let past_expenses_main = txsAll.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main' && t.date >= db.settings.startMonth + '-01' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
+                let past_transfers_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
+                let past_transfers_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 
-                let past_pool = past_months_budget + past_main_transfers_in - past_main_transfers_out - past_expenses;
+                let past_pool = past_months_budget + past_transfers_in - past_transfers_out - past_expenses_main;
                 let epargne_base = Math.max(0, past_pool);
 
                 let endOfCurrentMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).toISOString().split('T')[0];
-                let epargne_transfers_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
-                let epargne_transfers_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
+                let ep_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
+                let ep_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out_epargne' && t.date <= endOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 
-                let epargne_available = epargne_base + epargne_transfers_in - epargne_transfers_out;
+                let epargne_available = epargne_base + ep_in - ep_out;
+                totalEnvelopeSavings += epargne_available;
 
-                // 2. Traitement du mois en cours
-                let curr_expenses = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense').reduce((s,t) => s+t.amount, 0);
-                
-                // La dépense tape d'abord dans l'épargne disponible
-                let spent_on_epargne = Math.min(curr_expenses, Math.max(0, epargne_available));
-                let spent_on_main = curr_expenses - spent_on_epargne;
-                
-                let curr_main_transfers_in = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
-                let curr_main_transfers_out = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
-                
-                let curr_main_budget = env.budget + curr_main_transfers_in - curr_main_transfers_out;
-                let main_remaining = curr_main_budget - spent_on_main;
+                // Mois en cours
+                let curr_expenses_main = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main').reduce((s,t) => s+t.amount, 0);
+                let curr_expenses_ep = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'epargne').reduce((s,t) => s+t.amount, 0);
+                let total_env_spent = curr_expenses_main + curr_expenses_ep;
+                totalExpensesThisMonth += total_env_spent;
 
-                // Ajout aux totaux globaux
+                let curr_transfers_in = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_in').reduce((s,t) => s+t.amount, 0);
+                let curr_transfers_out = txsThisMonth.filter(t => t.envelopeId === env.id && t.type === 'transfer_out').reduce((s,t) => s+t.amount, 0);
+                
+                let curr_main_budget = env.budget + curr_transfers_in - curr_transfers_out;
+                let main_remaining = curr_main_budget - curr_expenses_main;
+
                 global_main_budget += curr_main_budget;
-                global_spent_main += spent_on_main;
-                totalExpensesThisMonth += curr_expenses;
+                global_spent_main += curr_expenses_main;
 
-                // 3. Préparation UI de la carte
-                let main_pct = curr_main_budget ? Math.min(100, (spent_on_main / curr_main_budget) * 100) : 0;
+                let main_pct = curr_main_budget ? Math.min(100, (curr_expenses_main / curr_main_budget) * 100) : 0;
                 let thres = env.alertThreshold || 80;
                 let isOver = main_remaining < 0;
-                
                 let colorCls = colorMap[env.color || 'pink'];
                 let bgCard = isOver ? 'bg-red-50 border-red-300 shadow-[0_0_15px_rgba(255,0,0,0.1)]' : 'bg-cardBg border-slate-200 hover:border-slate-300';
-                
-                if(spent_on_main > 0) { chartLabels.push(env.name); chartData.push(spent_on_main); chartColors.push(isOver ? '#ef4444' : '#0099ff'); }
 
-                // Bloc Épargne (s'affiche s'il y a de l'épargne ou si on en a consommé)
+                // Bloc Épargne imbriqué
                 let savingsHtml = '';
-                if (epargne_available > 0 || spent_on_epargne > 0) {
-                    let savePct = epargne_available > 0 ? Math.min(100, (spent_on_epargne / epargne_available) * 100) : 0;
+                if (epargne_available > 0 || curr_expenses_ep > 0) {
+                    let savePct = epargne_available > 0 ? Math.min(100, (curr_expenses_ep / epargne_available) * 100) : 0;
                     let sc = savingsColorMap[env.color || 'emerald'] || savingsColorMap['emerald'];
 
                     savingsHtml = `
                         <div class="mt-4 ${sc.bg} rounded-xl p-3 relative overflow-hidden">
-                            <h4 class="text-xs font-bold ${sc.textTitle} mb-1">Epargne ${env.name.toLowerCase()}</h4>
+                            <h4 class="text-xs font-bold ${sc.textTitle} mb-1">Épargne ${env.name.toLowerCase()}</h4>
                             <div class="flex justify-between items-end mb-2">
                                 <div>
-                                    <div class="text-xl font-black ${sc.textAmt}">${spent_on_epargne.toFixed(2)} €</div>
-                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois-ci sur<br>l'épargne disponible</div>
+                                    <div class="text-xl font-black ${sc.textAmt}">${curr_expenses_ep.toFixed(2)} €</div>
+                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois sur épargne</div>
                                 </div>
                                 <div class="text-right">
                                     <div class="text-xl font-black ${sc.textAmt}">${epargne_available.toFixed(2)} €</div>
-                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Épargnés les mois<br>précédents</div>
+                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Disponible</div>
                                 </div>
                             </div>
                             <div class="w-full ${sc.barBg} rounded-full h-1.5 relative overflow-hidden">
@@ -537,24 +598,25 @@
                 envContainer.innerHTML += `
                     <div class="${bgCard} border p-5 rounded-2xl relative env-card group transition-all flex flex-col justify-between">
                         <div>
-                            <div class="absolute top-4 right-4">
+                            <div class="absolute top-4 right-4 flex items-center gap-2">
+                                <span class="text-xs font-black bg-slate-100 text-slate-700 px-2 py-1 rounded-lg">${main_pct.toFixed(0)}%</span>
                                 <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
-                                <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-6 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
+                                <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-8 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
                                     <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
                                     <button onclick="showHistory('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-chart-line text-slate-400 mr-2"></i> Historique</button>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 mb-4">
+                            <div class="flex items-center gap-3 mb-4 pr-16">
                                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr ${colorCls} flex items-center justify-center text-white shadow-sm shrink-0">
                                     <i class="fa-solid ${env.icon || 'fa-basket-shopping'}"></i>
                                 </div>
-                                <div class="pr-6">
+                                <div>
                                     <h3 class="font-black text-slate-800 flex items-center gap-2 leading-tight">${env.name} ${isOver?'<i class="fa-solid fa-triangle-exclamation text-red-500" title="Dépassement !"></i>':''}</h3>
                                     <p class="text-xs text-slate-500">${curr_main_budget.toFixed(2)} € prévus</p>
                                 </div>
                             </div>
                             <div class="flex justify-between items-end mb-2">
-                                <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${spent_on_main.toFixed(2)} €</div>
+                                <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${curr_expenses_main.toFixed(2)} €</div>
                                 <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${main_remaining > 0 ? 'Reste ' + main_remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(main_remaining).toFixed(2)+'€'}</div>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
@@ -567,7 +629,13 @@
                 `;
             });
 
-            // GESTION BLOC SOLDE GLOBAL
+            // Pourcentage d'épargne non alloué à une enveloppe
+            let totalCombinedSavings = globalSavingsPool + totalEnvelopeSavings;
+            let savingsPct = totalCombinedSavings > 0 ? (globalSavingsPool / totalCombinedSavings) * 100 : 100;
+            document.getElementById('stat-global-savings').innerText = globalSavingsPool.toFixed(2) + ' €';
+            document.getElementById('stat-savings-pct').innerText = savingsPct.toFixed(0) + '%';
+
+            // Solde global
             let global_balance = global_main_budget - global_spent_main;
             let globalPct = global_main_budget ? (global_spent_main / global_main_budget) * 100 : 0;
             
@@ -628,26 +696,25 @@
                 let color = isOut ? 'text-slate-800' : 'text-neonPink';
                 if(isTrans) color = 'text-amber-600';
                 
+                let sourceBadge = '-';
+                if (t.type === 'expense') {
+                    sourceBadge = t.source === 'epargne' ? '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Épargne</span>' : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Budget Mois</span>';
+                } else if (t.type === 'global_saving') {
+                    sourceBadge = '<span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold">Épargne Globale</span>';
+                }
+
                 return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
                     <td class="p-3 text-slate-500">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
                     <td class="p-3 font-medium">${t.label}</td>
-                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : '-'}</span></td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : 'Général'}</span></td>
+                    <td class="p-3">${sourceBadge}</td>
                     <td class="p-3 text-right font-black ${color}">${isOut ? '-' : '+'}${t.amount.toFixed(2)} €</td>
                     <td class="p-3 text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             }).join('');
-
-            // Mise à jour Camembert
-            if(pieChartInstance) pieChartInstance.destroy();
-            const ctxPie = document.getElementById('expensePieChart').getContext('2d');
-            pieChartInstance = new Chart(ctxPie, {
-                type: 'doughnut',
-                data: { labels: chartLabels, datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
-            });
         }
 
-        // --- SOUMISSIONS ---
+        // --- FORMULAIRES & SOUMISSIONS ---
         function updateExpenseEnvelopeOptions() {
             let select = document.getElementById('exp-envelope');
             select.innerHTML = db.envelopes.filter(e => e.wallet === document.getElementById('exp-wallet').value).map(e => `<option value="${e.id}">${e.name}</option>`).join('');
@@ -655,10 +722,10 @@
 
         function updateTransferOptions() {
             let envs = db.envelopes.filter(e => e.wallet === currentView);
-            let html = '<optgroup label="Budgets du Mois (Classique)">';
+            let html = '<optgroup label="Budget du Mois">';
             envs.forEach(e => html += `<option value="main_${e.id}">${e.name}</option>`);
-            html += '</optgroup><optgroup label="Épargnes Accumulées">';
-            envs.forEach(e => html += `<option value="epargne_${e.id}">Épargne de : ${e.name}</option>`);
+            html += '</optgroup><optgroup label="Épargne de l\'enveloppe">';
+            envs.forEach(e => html += `<option value="epargne_${e.id}">Épargne : ${e.name}</option>`);
             html += '</optgroup>';
             document.getElementById('trans-from').innerHTML = html;
             document.getElementById('trans-to').innerHTML = html;
@@ -670,6 +737,17 @@
             closeModal('settingsModal'); saveDB();
         }
 
+        function handleGlobalSavingsSubmit(e) {
+            e.preventDefault();
+            db.transactions.push({
+                id: Date.now().toString(), type: 'global_saving', wallet: currentView,
+                amount: Number(document.getElementById('GS-amount').value),
+                date: document.getElementById('GS-date').value,
+                label: document.getElementById('GS-label').value || 'Alimentation épargne'
+            });
+            closeModal('addGlobalSavingsModal'); saveDB();
+        }
+
         function handleTransferSubmit(e) {
             e.preventDefault();
             let from = document.getElementById('trans-from').value;
@@ -677,30 +755,25 @@
             let amount = Number(document.getElementById('trans-amount').value);
             let date = document.getElementById('trans-date').value;
 
-            if (from === to) {
-                alert("La source et la destination doivent être différentes.");
-                return;
-            }
+            if (from === to) { alert("Source et destination identiques."); return; }
 
             let [fromType, fromId] = from.split('_');
             let [toType, toId] = to.split('_');
 
-            // Sortie (Source)
+            // Sortie
             db.transactions.push({
                 id: Date.now().toString() + '1',
                 type: fromType === 'main' ? 'transfer_out' : 'transfer_out_epargne',
-                wallet: currentView,
-                amount: amount, envelopeId: fromId, date: date,
-                label: `Transfert vers ${toType === 'main' ? 'budget' : 'épargne'}`
+                wallet: currentView, amount: amount, envelopeId: fromId, date: date,
+                label: `Transfert interne vers ${toType}`
             });
 
-            // Entrée (Destination)
+            // Entrée
             db.transactions.push({
                 id: Date.now().toString() + '2',
                 type: toType === 'main' ? 'transfer_in' : 'transfer_in_epargne',
-                wallet: currentView,
-                amount: amount, envelopeId: toId, date: date,
-                label: `Transfert depuis ${fromType === 'main' ? 'budget' : 'épargne'}`
+                wallet: currentView, amount: amount, envelopeId: toId, date: date,
+                label: `Transfert interne depuis ${fromType}`
             });
 
             closeModal('transferModal'); saveDB();
@@ -711,6 +784,7 @@
             db.transactions.push({
                 id: Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
                 amount: Number(document.getElementById('exp-amount').value), envelopeId: document.getElementById('exp-envelope').value,
+                source: document.getElementById('exp-source').value,
                 date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense'
             });
             closeModal('expenseModal'); saveDB();
