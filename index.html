@@ -431,6 +431,12 @@
             saveDB();
         }
 
+        function deleteEnvelope(id) {
+            if(!confirm("Supprimer cette enveloppe ?")) return;
+            db.envelopes = db.envelopes.filter(e => e.id !== id);
+            saveDB();
+        }
+
         function switchView(view) {
             currentView = view;
             ['moi', 'commun', 'pro'].forEach(v => {
@@ -560,11 +566,11 @@
                             <div class="flex justify-between items-end mb-2">
                                 <div>
                                     <div class="text-xl font-black ${sc.textAmt}">${curr_expenses_ep.toFixed(2)} €</div>
-                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois</div>
+                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Dépensé ce mois-ci sur<br>l'épargne disponible</div>
                                 </div>
                                 <div class="text-right">
                                     <div class="text-xl font-black ${sc.textAmt}">${epargne_restante.toFixed(2)} €</div>
-                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Disponible</div>
+                                    <div class="text-[9px] ${sc.textSub} leading-tight font-semibold">Epargnés les mois<br>précédents</div>
                                 </div>
                             </div>
                             <div class="w-full ${sc.barBg} rounded-full h-1.5 relative overflow-hidden">
@@ -582,6 +588,7 @@
                                 <button onclick="toggleMenu('${env.id}')" class="text-slate-400 hover:text-slate-800 p-1"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button>
                                 <div id="menu-${env.id}" class="env-menu hidden absolute right-0 top-8 w-36 bg-white border border-slate-200 shadow-xl rounded-xl py-1 z-10 text-sm">
                                     <button onclick="openModal('envelopeModal', '${env.id}')" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-pen text-slate-400 mr-2"></i> Modifier</button>
+                                    <button onclick="deleteEnvelope('${env.id}')" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600"><i class="fa-solid fa-trash text-red-400 mr-2"></i> Supprimer</button>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3 mb-4 pr-16">
@@ -595,7 +602,7 @@
                             </div>
                             <div class="flex justify-between items-end mb-2">
                                 <div class="text-2xl font-black ${isOver ? 'text-red-600' : 'text-slate-800'}">${curr_expenses_main.toFixed(2)} €</div>
-                                <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${main_remaining > 0 ? 'Reste ' + main_remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(main_remaining).toFixed(2)+'€'}</div>
+                                <div class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-slate-400'}">${main_remaining >= 0 ? 'Reste ' + main_remaining.toFixed(2)+'€' : 'Dépassé de '+Math.abs(main_remaining).toFixed(2)+'€'}</div>
                             </div>
                             <div class="w-full bg-slate-100 rounded-full h-2 relative overflow-hidden">
                                 <div class="h-full rounded-full transition-all ${main_pct >= thres && !isOver ? 'bg-orange-400' : isOver ? 'bg-red-500' : 'bg-slate-800'}" style="width: ${main_pct}%"></div>
