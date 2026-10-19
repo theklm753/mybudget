@@ -305,6 +305,7 @@
         <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl">
             <div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-minus-circle"></i> Saisir une dépense</h3><button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div>
             <form onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+                <input type="hidden" id="exp-id">
                 <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="exp-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div>
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="exp-wallet" onchange="updateExpenseEnvelopeOptions()" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div>
@@ -331,6 +332,7 @@
         <div class="bg-cardBg border border-neonPink/50 rounded-3xl w-full max-w-md p-6 shadow-xl">
             <div class="flex justify-between mb-4"><h3 class="text-lg font-black text-neonPink"><i class="fa-solid fa-money-bill-trend-up"></i> Revenu</h3><button onclick="closeModal('incomeModal')" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button></div>
             <form onsubmit="handleIncomeSubmit(event)" class="space-y-4">
+                <input type="hidden" id="inc-id">
                 <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Montant (€)</label><input type="number" step="0.01" id="inc-amount" required class="w-full bg-slate-50 border rounded-xl px-4 py-2.5 text-lg font-bold"></div>
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Portefeuille</label><select id="inc-wallet" class="w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-sm"><option value="moi">Personnel</option><option value="commun">Commun</option><option value="pro">Pro</option></select></div>
@@ -431,6 +433,30 @@
             saveDB();
         }
 
+        function editTransaction(id) {
+            let t = db.transactions.find(x => x.id === id);
+            if(!t) return;
+            
+            if(t.type === 'expense') {
+                document.getElementById('exp-id').value = t.id;
+                document.getElementById('exp-amount').value = t.amount;
+                document.getElementById('exp-wallet').value = t.wallet;
+                updateExpenseEnvelopeOptions();
+                document.getElementById('exp-envelope').value = t.envelopeId;
+                document.getElementById('exp-source').value = t.source || 'main';
+                document.getElementById('exp-date').value = t.date;
+                document.getElementById('exp-note').value = t.label;
+                document.getElementById('expenseModal').classList.remove('hidden');
+            } else if (t.type === 'income') {
+                document.getElementById('inc-id').value = t.id;
+                document.getElementById('inc-amount').value = t.amount;
+                document.getElementById('inc-wallet').value = t.wallet;
+                document.getElementById('inc-date').value = t.date;
+                document.getElementById('inc-label').value = t.label;
+                document.getElementById('incomeModal').classList.remove('hidden');
+            }
+        }
+
         function deleteEnvelope(id) {
             if(!confirm("Supprimer cette enveloppe ?")) return;
             db.envelopes = db.envelopes.filter(e => e.id !== id);
@@ -474,8 +500,21 @@
                     document.getElementById('env-name').value = ''; document.getElementById('env-budget').value = '';
                 }
             }
-            if (id === 'expenseModal') { document.getElementById('exp-wallet').value = currentView; updateExpenseEnvelopeOptions(); document.getElementById('exp-date').valueAsDate = new Date(); }
-            if (id === 'incomeModal') { document.getElementById('inc-wallet').value = currentView; document.getElementById('inc-date').valueAsDate = new Date(); }
+            if (id === 'expenseModal') { 
+                document.getElementById('exp-id').value = ''; 
+                document.getElementById('exp-wallet').value = currentView; 
+                document.getElementById('exp-amount').value = '';
+                document.getElementById('exp-note').value = '';
+                updateExpenseEnvelopeOptions(); 
+                document.getElementById('exp-date').valueAsDate = new Date(); 
+            }
+            if (id === 'incomeModal') { 
+                document.getElementById('inc-id').value = ''; 
+                document.getElementById('inc-amount').value = '';
+                document.getElementById('inc-label').value = '';
+                document.getElementById('inc-wallet').value = currentView; 
+                document.getElementById('inc-date').valueAsDate = new Date(); 
+            }
             if (id === 'transferModal') { updateTransferOptions(); document.getElementById('trans-date').valueAsDate = new Date(); }
         }
         
@@ -688,13 +727,20 @@
                     sourceBadge = '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">Transfert</span>';
                 }
 
+                let editBtn = (t.type === 'expense' || t.type === 'income') 
+                    ? `<button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors p-2 rounded-lg" title="Modifier"><i class="fa-solid fa-pen"></i></button>`
+                    : '';
+
                 return `<tr class="border-b border-slate-50 hover:bg-slate-50/50">
                     <td class="p-3 text-slate-500">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
                     <td class="p-3 font-medium">${t.label}</td>
                     <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">${env ? env.name : (t.type.includes('global') ? 'Épargne Globale' : 'Général')}</span></td>
                     <td class="p-3">${sourceBadge}</td>
                     <td class="p-3 text-right font-black ${color}">${isOut ? '-' : '+'}${t.amount.toFixed(2)} €</td>
-                    <td class="p-3 text-center"><button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        ${editBtn}
+                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors p-2 rounded-lg" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 </tr>`;
             }).join('');
         }
@@ -771,21 +817,27 @@
 
         function handleExpenseSubmit(e) {
             e.preventDefault();
-            db.transactions.push({
-                id: Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
+            let id = document.getElementById('exp-id').value;
+            let txData = {
+                id: id || Date.now().toString(), type: 'expense', wallet: document.getElementById('exp-wallet').value,
                 amount: Number(document.getElementById('exp-amount').value), envelopeId: document.getElementById('exp-envelope').value,
                 source: document.getElementById('exp-source').value,
                 date: document.getElementById('exp-date').value, label: document.getElementById('exp-note').value || 'Dépense'
-            });
+            };
+            if(id) { let idx = db.transactions.findIndex(x => x.id === id); db.transactions[idx] = txData; } 
+            else db.transactions.push(txData);
             closeModal('expenseModal'); saveDB();
         }
 
         function handleIncomeSubmit(e) {
             e.preventDefault();
-            db.transactions.push({
-                id: Date.now().toString(), type: 'income', wallet: document.getElementById('inc-wallet').value,
+            let id = document.getElementById('inc-id').value;
+            let txData = {
+                id: id || Date.now().toString(), type: 'income', wallet: document.getElementById('inc-wallet').value,
                 amount: Number(document.getElementById('inc-amount').value), date: document.getElementById('inc-date').value, label: document.getElementById('inc-label').value
-            });
+            };
+            if(id) { let idx = db.transactions.findIndex(x => x.id === id); db.transactions[idx] = txData; } 
+            else db.transactions.push(txData);
             closeModal('incomeModal'); saveDB();
         }
 
