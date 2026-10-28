@@ -21,8 +21,9 @@
     </script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chargement des données externes -->
-    <script src="data.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-lightBg text-slate-800 font-sans min-h-screen selection:bg-neonPink selection:text-white pb-20">
 
@@ -359,6 +360,20 @@
 
     <!-- LOGIQUE JAVASCRIPT -->
     <script>
+        // --- CONFIGURATION FIREBASE ---
+        const firebaseConfig = {
+            // ⚠️ REMPLACE CES LIGNES PAR CELLES COPIÉES DANS LA CONSOLE FIREBASE
+            apiKey: "TA_CLE_API",
+            authDomain: "ton-projet.firebaseapp.com",
+            projectId: "ton-projet",
+            storageBucket: "ton-projet.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcde"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbFirestore = firebase.firestore();
+        // ------------------------------
+
         const defaultFamilyData = {
             settings: { startMonth: '2026-09' },
             envelopes: [
@@ -372,9 +387,25 @@
             transactions: []
         };
 
-        let db = JSON.parse(localStorage.getItem('my_budget_db')) || window.db || defaultFamilyData;
+        // Chargement initial rapide (sauvegarde locale de secours)
+        let db = JSON.parse(localStorage.getItem('my_budget_db')) || defaultFamilyData;
         if (!db.settings) db.settings = { startMonth: '2026-09' };
         if (!db.envelopes || db.envelopes.length === 0) db.envelopes = defaultFamilyData.envelopes;
+
+        // Récupération des données depuis Firebase (Cloud)
+        dbFirestore.collection("budgets").doc("mon_foyer").get().then((doc) => {
+            if (doc.exists) {
+                db = doc.data(); // Mise à jour avec les données du cloud
+                if (!db.settings) db.settings = { startMonth: '2026-09' };
+                if (!db.envelopes || db.envelopes.length === 0) db.envelopes = defaultFamilyData.envelopes;
+                renderApp(); // Rafraîchissement de l'interface
+            } else {
+                // Si pas de données dans le cloud, on pousse les données par défaut/locales
+                saveDB();
+            }
+        }).catch((error) => {
+            console.error("Erreur de connexion à Firestore (mode hors-ligne probable):", error);
+        });
 
         const colorMap = {
             'pink': 'from-pink-500 to-rose-500 text-pink-600 border-pink-200 bg-pink-50',
@@ -401,14 +432,16 @@
         let currentView = 'commun';
         let viewDate = new Date(); 
 
+        // Remplacement de l'ancienne fonction de sauvegarde manuelle
         function saveDB() {
+            // Sauvegarde locale de secours
             localStorage.setItem('my_budget_db', JSON.stringify(db));
-            const dataStr = "let db = " + JSON.stringify(db, null, 4) + ";";
-            const blob = new Blob([dataStr], { type: "text/javascript" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = "data.js";
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            
+            // Envoi vers Firebase Cloud
+            dbFirestore.collection("budgets").doc("mon_foyer").set(db)
+                .then(() => console.log("Sauvegarde Cloud réussie !"))
+                .catch((error) => console.error("Erreur de sauvegarde Cloud :", error));
+                
             renderApp();
         }
 
@@ -551,7 +584,6 @@
             
             let envs = db.envelopes.filter(e => e.wallet === currentView);
 
-            // Génération des transactions étendues (incluant la projection des dépenses récurrentes)
             let expandedTxs = [];
             db.transactions.filter(t => t.wallet === currentView).forEach(t => {
                 expandedTxs.push(t);
@@ -587,7 +619,6 @@
 
             let totalEnvelopeSavings = 0;
 
-            // Mise à jour de la liste déroulante des filtres (Historique)
             let filterSelect = document.getElementById('history-filter');
             let currentFilter = filterSelect.value;
             let filterHtml = '<option value="all">Toutes les enveloppes</option>';
@@ -602,7 +633,6 @@
                 let past_months_budget = monthsDiff * env.budget;
                 let startOfCurrentMonth = mKey + '-01';
                 
-                // Calcul de l'épargne d'enveloppe
                 let past_expenses_main = txsAll.filter(t => t.envelopeId === env.id && t.type === 'expense' && t.source === 'main' && t.date >= db.settings.startMonth + '-01' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 let past_transfers_in = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_in' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
                 let past_transfers_out = txsAll.filter(t => t.envelopeId === env.id && t.type === 'transfer_out' && t.date < startOfCurrentMonth).reduce((s,t) => s+t.amount, 0);
@@ -639,7 +669,6 @@
                 let colorCls = colorMap[env.color || 'pink'];
                 let bgCard = isOver ? 'bg-red-50 border-red-300 shadow-[0_0_15px_rgba(255,0,0,0.1)]' : 'bg-cardBg border-slate-200 hover:border-slate-300';
 
-                // NOUVEAU: Couleurs dynamiques selon le pourcentage dépensé
                 let spentColor = 'text-emerald-500';
                 if (main_pct >= 100) spentColor = 'text-red-600';
                 else if (main_pct >= 80) spentColor = 'text-orange-500';
@@ -703,12 +732,10 @@
                 `;
             });
 
-            // L'Épargne globale agrège la somme des épargnes dispo des enveloppes ET l'épargne non allouée
             let totalCombinedSavings = globalSavingsPool + totalEnvelopeSavings;
             document.getElementById('stat-global-savings').innerText = totalCombinedSavings.toFixed(2) + ' €';
             document.getElementById('stat-savings-pct').innerText = globalSavingsPool.toFixed(2) + ' €';
 
-            // Le solde global se base maintenant sur les revenus moins les dépenses totales
             let global_balance = totalIncomes - totalExpensesThisMonth;
             let globalPct = totalIncomes ? (totalExpensesThisMonth / totalIncomes) * 100 : (totalExpensesThisMonth > 0 ? 101 : 0);
             
@@ -760,7 +787,6 @@
             if(globalPct > 100) { document.getElementById('global-progress').className = 'h-full rounded-full transition-all bg-white'; } 
             else { document.getElementById('global-progress').className = `h-full rounded-full transition-all ${displayGlobalPct>90 ? 'bg-red-500' : 'bg-gradient-to-r from-neonCyan to-neonPurple'}`; }
 
-            // Filtre et affichage de l'historique
             let tbody = document.getElementById('transactions-table');
             let filteredTxs = txsThisMonth;
             
@@ -772,7 +798,6 @@
                 }
             }
 
-            // Tri par date décroissante, puis par ID décroissant (ordre de saisie pour une même date)
             tbody.innerHTML = filteredTxs.sort((a, b) => {
                 let dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
