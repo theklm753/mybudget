@@ -361,16 +361,23 @@
     <!-- LOGIQUE JAVASCRIPT -->
     <script>
         // --- CONFIGURATION FIREBASE ---
-        const firebaseConfig = {
-            // ⚠️ REMPLACE CES LIGNES PAR CELLES COPIÉES DANS LA CONSOLE FIREBASE
-            apiKey: "TA_CLE_API",
-            authDomain: "ton-projet.firebaseapp.com",
-            projectId: "ton-projet",
-            storageBucket: "ton-projet.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcde"
-        };
-        firebase.initializeApp(firebaseConfig);
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAW2-LNY0BwYGLL4QtVyx-GDgehNGwanrk",
+  authDomain: "my-budget-7f064.firebaseapp.com",
+  projectId: "my-budget-7f064",
+  storageBucket: "my-budget-7f064.firebasestorage.app",
+  messagingSenderId: "920185528208",
+  appId: "1:920185528208:web:5144375fdb938bbc2ddd15"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
         const dbFirestore = firebase.firestore();
         // ------------------------------
 
